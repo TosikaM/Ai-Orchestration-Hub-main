@@ -1,0 +1,30 @@
+---
+description: Synthesise the project context — domain model, features, screens, rules — from the curated knowledge base.
+argument-hint: "[--refresh]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-018]
+---
+
+# Project Brief
+
+Build `context/` from `knowledge/distilled/` using the `knowledge-base` skill.
+
+## Skill Loaded
+**Required:** Read `skills/knowledge-base/SKILL.md` and `commands/project-brief.md`.
+
+## Usage
+```
+/project-brief
+/project-brief --refresh
+```
+
+## Output
+A populated `context/` — overview, domain model, features, screens, business rules,
+integrations, open questions, decisions — with provenance on every claim.
+
+## Notes
+Two artifacts, deliberately separate. `knowledge/` is the source of record and is never
+interpreted; `context/` is the synthesis and is corrected as understanding improves. If
+they disagree, the knowledge base wins, because it is what the client actually wrote.

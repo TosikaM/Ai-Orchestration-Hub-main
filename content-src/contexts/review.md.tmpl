@@ -1,0 +1,67 @@
+---
+name: review
+description: Review mode — scoring, critique, and gating. Read-only.
+---
+
+# Review Mode
+
+> Activated by `/mode review`. Read-only: no edits in review mode.
+
+## Behavior
+
+- Read the whole diff, plus the surrounding context of every changed hunk
+- Severity-order the findings, most severe first
+- Cite before you claim
+- Say what you did not review
+
+## The Pre-Report Gate
+
+Four questions. A finding that fails any one of them is not a finding and does not get
+written down.
+
+1. **Can I cite the exact line?**
+2. **Can I describe a concrete failure mode** — the input, the path, the wrong outcome?
+3. **Did I read the surrounding context**, or only the changed line?
+4. **Is the severity defensible** to somebody who disagrees with me?
+
+HIGH and CRITICAL require proof: the snippet, the line, the triggering scenario, and why
+the existing guards do not already catch it.
+
+{{ZERO_FINDINGS_CLAUSE}}
+
+## Common False Positives — Skip These Twelve
+
+1. Error handling the caller already does
+2. Input validation on a path that is internal-only
+3. "Magic numbers" that are HTTP status codes
+4. A long but flat switch statement
+5. Missing JSDoc on a self-evident signature
+6. `const` over `let` where the variable is genuinely reassigned
+7. A null dereference sitting behind a guard three lines up
+8. N+1 on a collection with fixed, small cardinality
+9. Deliberate fire-and-forget the code documents as deliberate
+10. `Math.random` outside a security context
+11. Hardcoded fixtures in test files
+12. Duplication across test files, which is often clarity rather than debt
+
+Each of these is a finding somebody has filed, and each one costs a little of the
+attention you need for the real one.
+
+## Output Format
+
+```
+Verdict:  PASS | FAIL
+Score:    <0-100>
+Blocking: <numbered, each with file:line, failure mode, fix>
+Suggestions: <clearly non-blocking>
+Deliberately skipped: <what and why>
+```
+
+## Tools To Favor
+
+Diff first. Grep for the shapes in the false-positive list to rule them out fast. Read
+the surrounding context, not the isolated hunk.
+
+{{GROUNDING_CONTRACT}}
+
+{{CONFIDENCE_TAXONOMY}}

@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestrator Active Session",
+  "description": "The shape of registry/active-session.json — the checked-in seed of a session's mutable state. The seed is committed with every value null or empty on purpose: a session file carrying one developer's active repo is a session file that quietly redirects the next person's commands. The live values are written under ~/.orchestrator/state/, outside every repository, so a terminal, a CI job, and the view plane read the same bytes.",
+  "type": "object",
+  "required": ["sessionVersion", "activeMode", "qualityGates"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Relative path to this schema. Present so an editor can validate the file as it is typed."
+    },
+    "sessionVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this session shape. Required, because a reader that cannot tell an old session file from a new one will happily interpret a missing field as a false value rather than as 'written before this field existed'."
+    },
+    "lastUpdated": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 UTC timestamp of the last write, or null in the committed seed. Null means 'never written', which is different from 'written and empty'."
+    },
+    "activeRepo": {
+      "type": ["string", "null"],
+      "description": "Name of the repo in focus, matching a name in registry/connected-repos.yml. Null means no repo has been selected, in which case the tooling falls back to the workspace folder name and says so — an inferred repo that announces itself is recoverable, a silent one is not."
+    },
+    "activeGroup": {
+      "type": ["string", "null"],
+      "description": "Name of the group in focus, matching a group in registry/connected-repos.yml. Null when work is single-repo."
+    },
+    "activeMode": {
+      "type": "string",
+      "enum": ["dev", "review", "research"],
+      "description": "Which context profile loads at session start. The three values match CONTEXTS in scripts/_lib.py and the files under contexts/; adding a fourth here without adding the context file produces a mode that loads nothing and reports no error.",
+      "default": "dev"
+    },
+    "lastCommand": {
+      "type": ["string", "null"],
+      "description": "The most recent orchestrator command, for resuming after a compaction or a crash."
+    },
+    "lastQuery": {
+      "type": ["string", "null"],
+      "description": "The most recent user query, retained for the same reason. Treat it as untrusted text on read: it is user input that has been round-tripped through a file, and re-injecting it into a prompt is exactly the delayed-injection surface the memory write guard exists to close."
+    },
+    "history": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "Recent session events, newest last. Bounded by the writer, not by this schema — an unbounded history is a file that grows until the session-start read stops fitting in the budget."
+    },
+    "pinnedRepos": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repos the user has pinned; these stay near the top of any picker regardless of recency."
+    },
+    "recentRepos": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Most-recently-active repos, newest first. Separate from pinnedRepos because recency decays and a pin does not."
+    },
+    "loadedMemory": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What memory the current session has already pulled in. Tracked so a refresh is a decision rather than a reflex — re-reading shared memory on every turn is a straightforward way to spend the eager-context budget on text that has not changed.",
+      "properties": {
+        "globalMemoryLoaded": {
+          "type": "boolean",
+          "description": "Whether memory/shared/ has been loaded this session."
+        },
+        "repoMemoryLoaded": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Repo names whose memory/repos/<name>/ content has been loaded this session."
+        },
+        "lastMemoryRefresh": {
+          "type": ["string", "null"],
+          "description": "ISO-8601 UTC timestamp of the last refresh, or null if memory has not been loaded."
+        }
+      }
+    },
+    "qualityGates": {
+      "type": "object",
+      "required": ["minScore"],
+      "additionalProperties": false,
+      "description": "The quality floor for this session and the outcome of the last gate. Required at the top level so a session file can never be silently gate-less.",
+      "properties": {
+        "minScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 80,
+          "description": "The passing score a review or test phase must reach, on the 0-100 scale the reviewer and QA agents produce. Defaults to 80, matching the `gate` values in config/pipeline-graph.json. Setting it to 0 disables the gate for the session; that is a legitimate move during setup work and a visible one, which is the point of storing it here rather than in an environment variable nobody reads back."
+        },
+        "lastScore": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "The score the most recent gate produced, or null if no gate has run."
+        },
+        "lastGateResult": {
+          "type": ["string", "null"],
+          "enum": ["pass", "fail", "escalated", null],
+          "description": "Outcome of the most recent gate. `escalated` is distinct from `fail`: it means the failure count reached maxGateFailuresBeforeEscalation and the decision moved to a human, so a retry loop must not treat it as another ordinary failure and try again."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The last context-budget measurement. Every figure here is an ESTIMATE derived by dividing characters by charsPerTokenEstimate in config/token-budgets.json — it is not a tokenizer count, and anything reporting these numbers should say so. This system deleted a fabricated token-savings percentage from its source material and does not intend to grow another one.",
+      "properties": {
+        "lastEagerChars": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Characters of always-on and eager context measured at the last budget run, or null if none has run."
+        },
+        "lastEstimatedTokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "lastEagerChars converted at the configured chars-per-token estimate. An estimate of an estimate; useful for spotting a jump, not for billing."
+        },
+        "lastOverBudget": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the last measurement exceeded the configured eager budget. False when no measurement has run, which is indistinguishable from 'measured and fine' — check lastEagerChars for null before reading anything into it."
+        }
+      }
+    }
+  }
+}

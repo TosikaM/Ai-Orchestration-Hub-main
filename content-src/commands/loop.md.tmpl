@@ -1,0 +1,27 @@
+---
+description: Run a bounded iterate-until-done loop behind the safety kernel.
+argument-hint: "<goal> until <stop condition>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# Loop
+
+Iterate using the `autonomous-loop` skill.
+
+## Skill Loaded
+**Required:** Read `skills/autonomous-loop/SKILL.md` and `commands/loop.md`.
+
+## Usage
+```
+/loop fix the flaky tests in the donations suite until the suite passes three times
+```
+
+## Output
+A per-iteration log, then the final state and the specific blocker if there is one.
+
+## Notes
+Hard stops: 5 iterations, 50K tokens, 10 minutes, or two iterations with no state change.
+The kernel halts the loop; it does not advise.

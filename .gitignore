@@ -1,0 +1,79 @@
+# Node
+node_modules/
+npm-debug.log*
+.npm/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+
+# Local dev config
+# settings.local.json is per-developer by convention — .claude/settings.json is the shared
+# file and is committed. Keeping the local one out avoids a permission grant made on one
+# machine turning into a permission grant for the whole team.
+.env
+.env.local
+.claude/settings.local.json
+
+# Build artifacts
+view/out/
+view/dist/
+*.vsix
+*.tsbuildinfo
+
+# Derived memory index — rebuildable, so restore it by rebuilding, never from a commit.
+memory/index/*
+!memory/index/.gitkeep
+
+# Session memory — one pipeline run's checkpoints, gate artifacts and band state.
+# Ephemeral by design; committing it would replay one developer's half-finished run in
+# somebody else's checkout.
+memory/sessions/*
+!memory/sessions/.gitkeep
+
+# Decision logs ARE committed. They record what was decided and why, including entries
+# that were later superseded, and that history is only useful to the team if the team
+# can read it. An agent that cannot see a rejected decision proposes it again.
+
+
+# Eval run output — timestamped result files, regenerated on every run.
+evals/runs/
+
+# Knowledge pipeline: the whole corpus ships, originals included.
+#
+# inbox/, extracted/, distilled/ and index/ are all committed, so a clone of this
+# repository is a complete knowledge base and an install from GitHub behaves exactly
+# like an install from a local directory. That equivalence is the point: a plugin that
+# works on the machine it was built on and silently lacks half its corpus everywhere
+# else is the harder failure to notice, because nothing reports it.
+#
+# Two consequences, both deliberate and both worth knowing before adding a second
+# client's material:
+#
+#   Size. inbox/ is roughly 57 MB of PDFs, decks and images. Git history is permanent,
+#   so every clone from here on carries that weight whether or not it needs it.
+#
+#   Scope. The corpus is no longer scoped to one project, and the confidentiality
+#   boundary is now whoever can read this repository. That is acceptable while the
+#   repository is private and holds one client's material. It stops being acceptable
+#   the moment a second client's documents land here, because a query would match
+#   across both and no mechanism separates them.
+
+# >>> AI Orchestrator (auto-managed — do not edit) >>>
+# Written by the AI Orchestrator and not intended for the consumer repo's history.
+# Remove this block with: python scripts/gitignore.py remove
+.github/orchestrator-context.md
+.github/orchestrator-install.json
+# <<< AI Orchestrator (auto-managed) <<<

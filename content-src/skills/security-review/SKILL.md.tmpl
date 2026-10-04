@@ -1,0 +1,66 @@
+---
+name: security-review
+description: Reviews a diff for credential exposure, injection surfaces, unsafe subprocess use, and dependency risk.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: security
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** secure, vulnerability, CVE, secret, injection, auth, sanitize, exploit.
+**USE FOR:** reviewing a diff or a dependency set for exploitable risk.
+**NOT FOR:** general code quality — that is `quality-sentinel`. Running the build —
+that is `verification-loop`. Fixing what you find — that is `cqrs-developer`.
+
+## Scope Discipline
+
+**The diff first.** Whole-repo scanning only on explicit request. An unbounded scan
+produces a finding list nobody reads, and a list nobody reads is indistinguishable from
+no scan at all.
+
+## The Evidence Bar
+
+A finding requires a concrete exploit path: **the input an attacker controls, the route
+it travels, and the outcome.** Severity without a scenario is a suggestion — file it as
+one and do not call it a vulnerability.
+
+"Unsanitized input" on a value that comes from a config file the attacker cannot write
+is not a vulnerability, and reporting it as one spends the credibility you need for the
+real finding next week.
+
+## The Eight Passes
+
+1. **Credential exposure** — hardcoded keys, tokens in defaults, secrets in logs
+2. **Injection surfaces** — shell, SQL, path traversal, template, prototype pollution
+3. **Unsafe subprocess** — a string command where an argv array belongs
+4. **Deserialization and dynamic evaluation** — `eval`, `pickle`, unsafe YAML, reflection
+5. **Authn/authz gaps** on new or changed endpoints
+6. **Dependency risk** — new or bumped packages, advisories, typosquat shapes
+7. **Secrets in configuration and CI** — including in a `.example` file
+8. **Agent-surface audit** — `python scripts/audit-agent-surface.py`
+
+Pass 8 is the reframe most reviews miss: **agent configuration is an attack surface, and
+it is one this system generates and distributes.** The highest-privilege text in a
+connected repository is the text the orchestrator put there. Every other pass looks at
+the consumer's code; this one looks at our own output.
+
+`references/security-checklists.md` carries the per-pass language-specific detail and
+the known false positives. **On demand only** — it is large and most reviews need one
+section of it.
+
+{{ZERO_FINDINGS_CLAUSE}}
+
+## Output
+
+A findings table — severity · `file:line` · attack scenario · fix — then a verdict.
+**A clean diff must be reported as clean.**
+
+{{GROUNDING_CONTRACT}}
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{LESSONS_LEARNED}}

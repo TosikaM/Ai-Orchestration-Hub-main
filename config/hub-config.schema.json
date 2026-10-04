@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestrator Hub Configuration",
+  "description": "The single source of organization identity (design principle P3, golden rule G4). No other file in the repository may carry an org-identifying string outside overlays/.",
+  "type": "object",
+  "required": ["configVersion", "org", "hub", "plugin", "license"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "configVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "org": {
+      "type": "object",
+      "required": ["id", "displayName", "team"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "displayName": { "type": "string" },
+        "team": { "type": "string" },
+        "codeownersTeam": { "type": "string", "pattern": "^@[\\w.-]+/[\\w.-]+$" }
+      }
+    },
+    "hub": {
+      "type": "object",
+      "required": ["name", "repository", "branch", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "repository": { "type": "string", "pattern": "^[\\w.-]+/[\\w.-]+$" },
+        "branch": { "type": "string", "pattern": "^[\\w./-]+$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "buildRoot": { "type": "string" }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "required": ["name", "marketplace", "installRef"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "marketplace": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "installRef": { "type": "string" },
+        "minimumClaudeCodeVersion": { "type": "string" }
+      }
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "publisher": { "type": "string" },
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "settingsPrefix": {
+          "type": "string",
+          "pattern": "^[a-z]+$",
+          "description": "Lowercase only, always. Adjudication A1: the source shipped `aiorchestrator` in the manifest and read `aiOrchestrator` in nine call sites, silently disabling every user setting."
+        }
+      }
+    },
+    "overlay": {
+      "type": "object",
+      "required": ["enabled", "profile", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "profile": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "path": { "type": "string" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "homeDirName": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    },
+    "license": { "type": "string" }
+  }
+}

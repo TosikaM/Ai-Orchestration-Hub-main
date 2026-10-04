@@ -1,0 +1,7 @@
+{
+  "project": "CNP Platform Modernization \u2014 Phase 1",
+  "scaffoldedAt": "2026-09-09T13:11:25Z",
+  "sourceOfTruth": "knowledge/distilled/",
+  "note": "context/ is derived. If a claim here and the knowledge base disagree, the knowledge base wins and the context is corrected \u2014 never the other way round, because the knowledge base is what the client actually wrote.",
+  "batches": []
+}

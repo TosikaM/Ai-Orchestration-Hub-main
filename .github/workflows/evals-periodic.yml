@@ -1,0 +1,78 @@
+# The weekly half of the eval suite.
+#
+# WHY THE SUITE IS SPLIT IN TWO
+#
+# Every case in evals/evals.json carries a `tier`, and the tier is either `gate` or
+# `periodic`. The split is not about importance — it is about what a case needs in order
+# to produce a trustworthy verdict.
+#
+#   gate     — deterministic safety and grounding guardrails. A refusal to write a
+#              secret, a denial from the fact-forcing gate, a citation that must carry a
+#              file:line. These have a right answer that does not depend on a fixture
+#              repository, an accumulated memory store, or a judge's taste, so they can
+#              run on a pull request and block the merge. They are checked into the
+#              PR-time path, not here.
+#
+#   periodic — everything that cannot honestly gate a merge. Three reasons a case lands
+#              in this tier: it needs a fixture repository that CI does not clone; it
+#              needs a populated memory or knowledge store, which a fresh checkout does
+#              not have; or it is scored by a model judge, and judge subjectivity means a
+#              single run's verdict is a signal rather than a fact.
+#
+# The temptation is to gate on everything, and it is the wrong instinct. A gate that
+# fails for reasons unrelated to the change in front of it gets re-run until it is green,
+# and after the third re-run people stop reading it at all. A weekly run of the same
+# cases, compared against the previous week, tells you about drift — which is the actual
+# question these cases answer.
+
+name: Evals (periodic tier)
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC — early enough that the results are waiting at the start of
+    # the week, rather than landing mid-Friday when nobody will act on a regression.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  periodic:
+    name: Full eval suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      # --all runs both tiers. Re-running the gate cases here is deliberate: it is the
+      # only place they are exercised against the same model version and the same
+      # judge as the periodic ones, so a gate case that has quietly become trivially
+      # passable shows up next to its periodic neighbours instead of alone.
+      - name: Run the eval suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python evals/eval-runner.py --all
+
+      # if: always() — the run artifact matters MORE on a failure than on a pass. A
+      # failed suite whose transcripts were discarded because the step before it exited
+      # non-zero leaves you with a red check and no way to see what the model actually
+      # said, and the only remaining move is to re-run it and hope it fails the same way.
+      - name: Upload eval run records
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-runs-${{ github.run_id }}
+          path: evals/runs/
+          # Retained long enough to compare a regression against several prior Mondays.
+          # Week-over-week comparison is the whole point of a periodic tier.
+          retention-days: 90
+          # A missing directory means the runner never got as far as writing a record.
+          # That is worth a warning in the log, not a second failure on top of the first.
+          if-no-files-found: warn

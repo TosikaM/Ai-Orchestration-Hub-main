@@ -1,0 +1,197 @@
+{
+  "_comment": "Diff-based eval selection: which changed paths should re-run which case. Literals only — no logic, no imports, no references to anything outside this file. That constraint is load-bearing rather than stylistic: selection reads OLD git versions of this file standalone (`git show <ref>:evals/touchfiles.json`) so the map itself can be diffed across commits, and a file that only makes sense alongside the code that ships with it cannot be read that way. Patterns are matched with fnmatch, where `*` crosses directory separators; `**` is therefore an emphatic `*` kept for readability, and the map errs toward over-selection because running an extra case costs a minute and skipping the one that mattered costs a release.",
+
+  "global": [
+    "evals/evals.json",
+    "evals/eval-runner.py",
+    "evals/touchfiles.json",
+    "content-src/preamble/**",
+    "config/token-budgets.json",
+    "hub.config.json",
+    "hooks/runtime/**"
+  ],
+  "_globalComment": "Anything here re-runs the whole selected tier. The preamble blocks and the runtime hooks are shared by every agent, the token budget shapes every prompt, and hub.config.json decides what the plugin even is — a change to any of them can move a case that appears unrelated to it. evals.json and touchfiles.json are listed because a change to the definition of a test invalidates every earlier result, including the ones that were green.",
+
+  "cases": {
+    "eval-001": [
+      "agents/analyst.agent.md",
+      "skills/repo-context-builder/**",
+      "scripts/context-gen.py",
+      "config/stack-mappings.json",
+      "templates/**",
+      "commands/analyze.md",
+      "prompts/analyze.prompt.md"
+    ],
+    "eval-002": [
+      "agents/analyst.agent.md",
+      "agents/graph-navigator.agent.md",
+      "skills/cross-repo-orchestration/**",
+      "skills/structural-graph/**",
+      "scripts/cross-repo.py",
+      "scripts/graph.py",
+      "registry/connected-repos.yml",
+      "commands/explore.md",
+      "prompts/explore.prompt.md",
+      "commands/graph.md",
+      "prompts/graph.prompt.md"
+    ],
+    "eval-003": [
+      "agents/reviewer.agent.md",
+      "skills/quality-sentinel/**",
+      "contexts/review.md",
+      "commands/review.md",
+      "prompts/review.prompt.md"
+    ],
+    "eval-004": [
+      "agents/orchestrator.agent.md",
+      "skills/sdlc-orchestrator/**",
+      "skills/continuous-learning/**",
+      "memory/shared/**",
+      "scripts/memory.py",
+      "commands/memory.md",
+      "prompts/memory.prompt.md",
+      "commands/plan.md",
+      "prompts/plan.prompt.md"
+    ],
+    "eval-005": [
+      "agents/orchestrator.agent.md",
+      "skills/cross-repo-orchestration/**",
+      "skills/sdlc-orchestrator/**",
+      "config/pipeline-graph.json",
+      "registry/connected-repos.yml",
+      "scripts/cross-repo.py",
+      "scripts/pipeline.py",
+      "commands/pipeline.md",
+      "prompts/pipeline.prompt.md",
+      "commands/repo.md",
+      "prompts/repo.prompt.md"
+    ],
+    "eval-006": [
+      "agents/analyst.agent.md",
+      "skills/grounding-guard/**",
+      "scripts/grounding.py",
+      "hooks/fact-force.hook.md",
+      "hooks/citation-guard.hook.md",
+      "commands/ground.md",
+      "prompts/ground.prompt.md",
+      "commands/explore.md",
+      "prompts/explore.prompt.md"
+    ],
+    "eval-007": [
+      "agents/analyst.agent.md",
+      "skills/grounding-guard/**",
+      "scripts/grounding.py",
+      "hooks/citation-guard.hook.md",
+      "contexts/research.md",
+      "commands/ground.md",
+      "prompts/ground.prompt.md"
+    ],
+    "eval-008": [
+      "agents/orchestrator.agent.md",
+      "skills/context-budget/**",
+      "skills/*/SKILL.md",
+      "scripts/context-bill.py",
+      "scripts/measure-discovery-budget.py",
+      "hooks/token-budget-guard.hook.md",
+      "hooks/pre-compact-checkpoint.hook.md",
+      "commands/budget.md",
+      "prompts/budget.prompt.md"
+    ],
+    "eval-009": [
+      "agents/security.agent.md",
+      "skills/security-review/**",
+      "config/redaction-patterns.json",
+      "commands/security.md",
+      "prompts/security.prompt.md"
+    ],
+    "eval-010": [
+      "agents/security.agent.md",
+      "skills/security-review/**",
+      "config/redaction-patterns.json",
+      "contexts/review.md",
+      "commands/security.md",
+      "prompts/security.prompt.md"
+    ],
+    "eval-011": [
+      "agents/architect.agent.md",
+      "skills/architecture-decision/**",
+      "scripts/decision.py",
+      "docs/adr/**",
+      "commands/adr.md",
+      "prompts/adr.prompt.md"
+    ],
+    "eval-012": [
+      "agents/orchestrator.agent.md",
+      "skills/grounding-guard/**",
+      "skills/structural-graph/**",
+      "scripts/graph.py",
+      "scripts/grounding.py",
+      "hooks/fact-force.hook.md",
+      "commands/ground.md",
+      "prompts/ground.prompt.md"
+    ],
+    "eval-013": [
+      "agents/developer.agent.md",
+      "skills/cqrs-developer/**",
+      "skills/verification-loop/**",
+      "contexts/dev.md",
+      "commands/implement.md",
+      "prompts/implement.prompt.md",
+      "commands/verify.md",
+      "prompts/verify.prompt.md"
+    ],
+    "eval-014": [
+      "agents/orchestrator.agent.md",
+      "skills/sdlc-orchestrator/**",
+      "skills/autonomous-loop/**",
+      "hooks/human-gate.hook.md",
+      "commands/loop.md",
+      "prompts/loop.prompt.md",
+      "commands/implement.md",
+      "prompts/implement.prompt.md"
+    ],
+    "eval-015": [
+      "agents/orchestrator.agent.md",
+      "skills/continuous-learning/**",
+      "hooks/learning-capture.hook.md",
+      "hooks/memory-dedupe.hook.md",
+      "config/redaction-patterns.json",
+      "scripts/memory.py",
+      "scripts/redact.py",
+      "memory/shared/**",
+      "commands/learn.md",
+      "prompts/learn.prompt.md"
+    ],
+    "eval-016": [
+      "agents/developer.agent.md",
+      "skills/cqrs-developer/**",
+      "skills/structural-graph/**",
+      "scripts/graph.py",
+      "hooks/fact-force.hook.md",
+      "commands/implement.md",
+      "prompts/implement.prompt.md"
+    ],
+    "eval-017": [
+      "agents/orchestrator.agent.md",
+      "skills/repo-context-builder/**",
+      "hooks/prompt-defense.hook.md",
+      "hooks/config-protection.hook.md",
+      "sync/default-sync-config.json",
+      "sync/sync-config.schema.json",
+      "scripts/sync-repo.ps1",
+      "instructions/**",
+      "commands/analyze.md",
+      "prompts/analyze.prompt.md"
+    ],
+    "eval-018": [
+      "agents/knowledge-curator.agent.md",
+      "skills/knowledge-base/**",
+      "scripts/ingest-knowledge.py",
+      "knowledge/**",
+      "commands/knowledge.md",
+      "prompts/knowledge.prompt.md",
+      "commands/document.md",
+      "prompts/document.prompt.md"
+    ]
+  }
+}

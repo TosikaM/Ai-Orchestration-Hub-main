@@ -1,0 +1,73 @@
+---
+name: grounding-guard
+description: Verifies that every file, symbol, and claim in a response actually exists in the codebase before it ships.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: quality
+  tier: FAST
+---
+
+## Routing
+
+**Triggers:** verify, "are you sure", "did you check", cite, prove, ground this.
+**USE FOR:** validating the claims in a draft before sending; auditing a document for
+uncited assertions.
+**NOT FOR:** running the build — that is `verification-loop`. Reviewing code quality —
+that is `quality-sentinel`. Security findings — that is `security-review`.
+
+> **Read-only by contract, and this one is not negotiable.** A verifier that can mutate
+> the thing it verifies is not a verifier. `validate-structure.py` fails the build if
+> `Write` or `Edit` appears in this skill's `allowed-tools`.
+
+{{CONFIDENCE_TAXONOMY}}
+
+## The Four-Question Gate
+
+Applied to every 🟢 claim before it ships:
+
+1. Can I point to the exact file and line?
+2. Did I actually read it **in this session**, or am I recalling a pattern from training?
+3. Does the cited line say what I claim it says, or merely relate to it?
+4. If the file is not in the structural graph, did I open it — or am I describing a
+   plausible file?
+
+**Note the honest limit of this gate.** These are self-assessment questions, and
+self-assessment is answered from the same context that produced the claim. That is why
+the system does not rely on it alone: the fact-forcing gate demands *retrieved* facts —
+an importer list you cannot produce without searching — before an edit lands. Use this
+skill to catch what you can, and do not mistake having run it for having been checked.
+
+## The Named Failure Modes
+
+Hallucination in this domain is not random. It takes seven recurring shapes:
+
+1. **The convention-perfect ghost file** — a path matching the repo's naming scheme
+   exactly, that does not exist. The most dangerous, because the name looks right to a
+   reviewer too.
+2. **The plausible method** — a real class, a method it does not have.
+3. **The framework-default config key** — standard for the framework, absent here.
+4. **The remembered version** — a version recalled from training instead of read from a
+   manifest.
+5. **Reading past the cut** — continuing after a truncation marker as if the remainder
+   had been read.
+6. **The folklore blockage** — "the API can't do that", asserted from familiarity rather
+   than from an error, a doc line, or a probe. Distinctive because it *stops* work
+   rather than producing wrong work, so no review ever sees it: there is no artifact.
+7. **The premature escalation** — routing to a human for an ambiguity one read would
+   have settled. Cheap individually, corrosive in aggregate, because it trains the
+   operator to approve without reading.
+
+{{EVIDENCE_DIRECTIVE}}
+
+## Output
+
+The draft, annotated. Every 🔴 either becomes 🟢 by opening the file, or stays labeled
+with what would confirm it. Close with a count: `verified N · inferred N · assumed N`.
+
+**Downgrading a claim is a success, not a failure.**
+
+{{GROUNDING_CONTRACT}}
+
+{{LESSONS_LEARNED}}

@@ -1,0 +1,61 @@
+{
+  "name": "orchestrator",
+  "version": "3.2.0",
+  "description": "Technology-agnostic AI SDLC orchestrator — cross-repo pipelines, grounded context, blocking quality gates, enforced token budgets, and auto-learning memory",
+  "author": {
+    "name": "Algoworks AI Platform Team"
+  },
+  "repository": "https://github.com/abhishek-narula-algoworks/Ai-Orchestration-Hub",
+  "license": "PROPRIETARY",
+  "keywords": [
+    "sdlc",
+    "orchestrator",
+    "pipeline",
+    "cross-repo",
+    "grounding",
+    "agents",
+    "memory",
+    "token-budget"
+  ],
+  "skills": [
+    "./skills/"
+  ],
+  "commands": [
+    "./commands/"
+  ],
+  "_componentDeclaration": "Only skills and commands are declared, and both as ARRAYS OF DIRECTORIES rather than file lists — so adding a skill never requires editing this manifest, which matters for a generated content plane. Agents are deliberately absent: the Claude Code plugin validator REJECTS an `agents` key outright with the opaque error `agents: Invalid input`, and agent files under agents/ are auto-discovered by convention. Hooks are absent for the same class of reason — see hooks/hooks.json. validate-structure.py fails the build if either key reappears here.",
+  "mcpServers": {},
+  "_mcpServersNote": "An explicit empty object, not an omission. It opts out of auto-loading a repo-root .mcp.json, and it keeps generated MCP tool names short: a long plugin slug plus a server plus a tool can exceed the 64-character limit that strict gateways enforce. This is also why the plugin is named `orchestrator` rather than `ai-orchestrator-hub`.",
+  "userConfig": {
+    "hooks_enabled": {
+      "type": "boolean",
+      "title": "Enable orchestrator hooks",
+      "description": "Runs the fact-forcing gate, config protection, prompt-defense scanning, destructive-command gating, citation auditing, and learning capture. Disable to keep skills and agents without any local automation.",
+      "default": true
+    },
+    "hook_profile": {
+      "type": "string",
+      "title": "Hook profile",
+      "description": "minimal (lifecycle bookkeeping only) | standard (adds quality and grounding gates) | strict (adds everything). An invalid value falls back to standard rather than to off.",
+      "default": "standard"
+    },
+    "quality_gate_threshold": {
+      "type": "number",
+      "title": "Quality gate threshold",
+      "description": "Minimum score (0-100) a pipeline phase must reach before the pipeline advances.",
+      "default": 80
+    },
+    "grounding_enabled": {
+      "type": "boolean",
+      "title": "Grounding evidence manifest",
+      "description": "Verify referenced files and symbols against the structural graph before a skill runs, and hand the model an EXISTS / NOT FOUND manifest.",
+      "default": true
+    },
+    "org_profile": {
+      "type": "string",
+      "title": "Overlay profile",
+      "description": "Must match a folder under overlays/. Org-specific content is merged over the neutral content plane at sync time.",
+      "default": "algoworks"
+    }
+  }
+}

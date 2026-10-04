@@ -1,0 +1,7 @@
+# Build output and local tooling. Nothing here is recoverable from anything but a
+# rebuild, and nothing here should ever differ between two checkouts of the same commit.
+
+node_modules/
+out/
+*.vsix
+.vscode-test/

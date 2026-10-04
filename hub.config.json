@@ -1,0 +1,39 @@
+{
+  "$schema": "./config/hub-config.schema.json",
+  "configVersion": "1.1.0",
+  "org": {
+    "id": "algoworks",
+    "displayName": "Algoworks",
+    "team": "Algoworks AI Platform Team",
+    "codeownersTeam": "@algoworks/ai-platform"
+  },
+  "hub": {
+    "name": "ai-orchestrator-hub",
+    "repository": "abhishek-narula-algoworks/Ai-Orchestration-Hub",
+    "branch": "main",
+    "version": "3.2.0",
+    "buildRoot": "C:\\Users\\AbhishekNarula\\Source Code\\AI-Orchestrator"
+  },
+  "plugin": {
+    "name": "orchestrator",
+    "marketplace": "algoworks",
+    "installRef": "orchestrator@algoworks",
+    "minimumClaudeCodeVersion": "2.1.0"
+  },
+  "view": {
+    "publisher": "algoworks",
+    "id": "algoworks-ai-orchestrator-view",
+    "displayName": "Algoworks AI Orchestrator (View)",
+    "settingsPrefix": "aiorchestrator"
+  },
+  "overlay": {
+    "enabled": true,
+    "profile": "algoworks",
+    "path": "overlays/algoworks"
+  },
+  "state": {
+    "homeDirName": ".orchestrator",
+    "note": "Machine-scoped state lives at ~/.orchestrator/. It is deliberately outside any repo so a terminal session, a CI job, and the view plane all read the same files."
+  },
+  "license": "PROPRIETARY"
+}

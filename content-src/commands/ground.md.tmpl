@@ -1,0 +1,29 @@
+---
+description: Verify every claim in a draft against the codebase and annotate by confidence.
+argument-hint: "[the draft, or a file path]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-006, eval-012]
+---
+
+# Ground
+
+Audit claims using the `grounding-guard` skill.
+
+## Skill Loaded
+**Required:** Read `skills/grounding-guard/SKILL.md` and `commands/ground.md`.
+
+## Usage
+```
+/ground
+/ground docs/architecture-overview.md
+```
+
+## Output
+The draft annotated with confidence markers, and a summary line counting
+verified / inferred / assumed.
+
+## Notes
+Downgrading a claim is a success. This is self-assessment and has an honest ceiling —
+the fact-forcing gate is what actually blocks an ungrounded edit.

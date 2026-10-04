@@ -1,0 +1,182 @@
+{
+  "$schema": "./policy.schema.json",
+  "policyVersion": "1.0.0",
+  "description": "The enterprise policy model. Everything an organization, a project, or a single repository is ALLOWED to do — autonomy, permissions, data handling, quality gates, cost — expressed as data so a customer-specific policy never requires a change to the platform.",
+
+  "_resolution": {
+    "order": ["defaults", "organization", "project", "repository", "environment"],
+    "rule": "Most specific wins, key by key. A repository may only NARROW what its project allows, never widen it. Widening is refused at load time and reported, rather than silently honoured — a policy engine that can be relaxed from inside the thing it governs is not a policy engine.",
+    "resolvedBy": "scripts/policy.py resolve --repo <path>"
+  },
+
+  "defaults": {
+    "autonomy": {
+      "level": 3,
+      "_levels": {
+        "0": "Explain only. The agent describes and proposes; it writes nothing.",
+        "1": "Suggest code. Diffs are shown, never applied.",
+        "2": "Write code. Every edit requires developer approval before it lands.",
+        "3": "Write, test and self-correct within a repository. No branch, no PR, no deploy.",
+        "4": "Open a pull request automatically. Human review still gates the merge.",
+        "5": "Deploy. Reserved; see maxLevelWithoutExplicitGrant."
+      },
+      "maxLevelWithoutExplicitGrant": 3,
+      "grantRequiredAbove": "An organization admin sets `autonomy.level` above 3 in an organization or project block, and the grant is recorded in the decision log. A repository cannot raise its own level.",
+      "rationale": "Levels 0-3 are where an agent is useful and its mistakes stay inside a working tree. Level 4 puts an artifact in front of colleagues, and level 5 changes something customers touch. The jump in blast radius between 3 and 4 is much larger than between any other adjacent pair, which is why the default ceiling sits exactly there.",
+      "enforcedBy": [
+        "hooks/runtime/handlers/autonomy-gate.js — denies the tool call that would exceed the level",
+        "scripts/pipeline.py — refuses to advance into a phase the level does not permit"
+      ]
+    },
+
+    "permissions": {
+      "_note": "The AI permission model. Per agent, because 'the orchestrator may deploy' and 'the reviewer may deploy' are very different claims. Deny always beats allow; an empty allow list means the agent may only read.",
+      "agents": {
+        "orchestrator": {
+          "allow": ["repo.read", "repo.write", "test.run", "build.run", "git.branch", "git.commit", "pr.create"],
+          "deny": ["deploy.production", "db.production", "iam.modify", "secrets.rotate"]
+        },
+        "developer": {
+          "allow": ["repo.read", "repo.write", "test.run", "build.run"],
+          "deny": ["deploy.production", "deploy.staging", "db.production", "iam.modify", "secrets.rotate", "pr.merge"]
+        },
+        "analyst": { "allow": ["repo.read", "graph.build"], "deny": ["repo.write", "deploy.production"] },
+        "reviewer": { "allow": ["repo.read", "test.run", "build.run"], "deny": ["repo.write", "pr.merge", "deploy.production"] },
+        "qa": { "allow": ["repo.read", "repo.write.tests", "test.run", "build.run"], "deny": ["repo.write.source", "deploy.production"] },
+        "security": { "allow": ["repo.read", "scan.run"], "deny": ["repo.write", "deploy.production"] },
+        "architect": { "allow": ["repo.read", "docs.write"], "deny": ["repo.write.source", "deploy.production"] },
+        "ba": { "allow": ["repo.read", "tracker.write", "docs.write"], "deny": ["repo.write", "deploy.production"] },
+        "graph-navigator": { "allow": ["repo.read", "graph.build"], "deny": ["repo.write"] },
+        "knowledge-curator": { "allow": ["knowledge.read", "knowledge.write"], "deny": ["repo.write.source", "deploy.production"] }
+      },
+      "capabilityDefinitions": {
+        "repo.read": "Read source, history and configuration in the active repository.",
+        "repo.write": "Modify source files in the active repository.",
+        "repo.write.tests": "Modify files matching the stack's test pattern only.",
+        "repo.write.source": "Modify non-test source files.",
+        "build.run": "Execute the stack's build command.",
+        "test.run": "Execute the stack's test command.",
+        "scan.run": "Execute static analysis, dependency and secret scanners.",
+        "graph.build": "Build or refresh the structural index.",
+        "docs.write": "Write under docs/ and adr/.",
+        "knowledge.read": "Query the curated knowledge base.",
+        "knowledge.write": "Write under knowledge/distilled/.",
+        "tracker.write": "Create or comment on issues in a configured tracker.",
+        "git.branch": "Create a branch.",
+        "git.commit": "Commit to a non-default branch.",
+        "pr.create": "Open a pull request.",
+        "pr.merge": "Merge a pull request.",
+        "deploy.staging": "Deploy to a non-production environment.",
+        "deploy.production": "Deploy to production.",
+        "db.production": "Connect to a production datastore.",
+        "iam.modify": "Change identity or access configuration.",
+        "secrets.rotate": "Rotate or issue credentials."
+      }
+    },
+
+    "dataPolicy": {
+      "_note": "What may enter a prompt, what may leave the machine, and how long anything is kept. These are the questions a customer security review asks first, and 'we scan for secrets' is only one of them.",
+      "sourceCodeMayLeaveEnvironment": true,
+      "sourceCodeEgressNote": "True because the model runs as a hosted service. State this plainly to a customer rather than implying local inference. An air-gapped deployment needs a local model and is out of scope for v3.1 — see docs/CLAUDE-DEPLOYMENT-AND-DESIGN.md.",
+      "productionDataInPrompts": "forbidden",
+      "customerPiiInPrompts": "forbidden",
+      "secretsInPrompts": "blocked-by-scanner",
+      "scannerRef": "config/redaction-patterns.json",
+      "promptRetentionDays": 0,
+      "responseRetentionDays": 0,
+      "retentionNote": "Zero means this system stores neither prompts nor responses. Transcripts belong to the harness and follow its own retention. The only things this system persists are: the local telemetry ledger (counts and durations, never content), the egress ledger (hashes and byte counts, never payloads), memory entries (redaction-scanned before write), and the decision log.",
+      "telemetryLeavesEnvironment": false,
+      "forbiddenPathGlobs": [
+        "**/.env", "**/.env.*", "**/secrets/**", "**/*.pem", "**/*.pfx", "**/*.p12",
+        "**/id_rsa*", "**/credentials", "**/.aws/**", "**/.kube/config"
+      ]
+    },
+
+    "qualityGate": {
+      "_note": "The gate is a CONJUNCTION, not a score. An AI review is one input among several, and it is never the deciding one — a model grading work produced by the same family of model is not an independent check, and treating it as one is how a quality bar quietly becomes a formality.",
+      "deterministic": {
+        "build": "must-pass",
+        "unitTests": "must-pass",
+        "regressionTests": "must-pass",
+        "typecheck": "must-pass",
+        "lint": "must-pass",
+        "secretScan": "must-pass",
+        "securityScan": "no-critical-or-high",
+        "coverage": { "minimumPercent": 80, "appliesWhen": "the repository already has a coverage tool configured" },
+        "architectureRules": "must-pass-when-defined",
+        "apiContract": "must-pass-when-defined"
+      },
+      "aiAssessment": { "minimumScore": 80, "weight": "advisory-plus-blocking", "note": "Blocks below the threshold, but passing it is never sufficient on its own." },
+      "humanReview": { "required": true, "requiredAtLevels": [2, 3, 4, 5] },
+      "rule": "advance IF every deterministic check passes AND aiAssessment >= minimumScore AND humanReview is satisfied for the current autonomy level. A deterministic check that could not RUN counts as a failure, never as a pass."
+    },
+
+    "approvalPolicy": {
+      "_note": "Four named gates. Each names a decision a human owns and an artifact they review, because 'approve?' with nothing attached trains people to click yes.",
+      "gates": [
+        { "id": "requirement", "phase": "analyze", "owner": "product-or-ba", "artifact": "the restated requirement and its acceptance criteria", "question": "Is this what was actually asked for?" },
+        { "id": "design", "phase": "analyze", "owner": "tech-lead", "artifact": "the impact map: every file and layer that changes, each cited", "question": "Is this the right change to make?" },
+        { "id": "code", "phase": "review", "owner": "developer", "artifact": "the diff, the review score and the verification output", "question": "Would you merge this?" },
+        { "id": "production", "phase": "deploy", "owner": "release-owner", "artifact": "the readiness verdict, the migration list and the rollback note", "question": "Are you willing to be paged for this?" }
+      ],
+      "enforcedBy": "hooks/runtime/handlers/human-gate.js blocks the Stop event while a gate artifact has no verdict file. The agent cannot clear its own gate.",
+      "timeoutBehavior": "wait-indefinitely",
+      "timeoutNote": "Deliberately no auto-approve on timeout. A gate that approves itself after an interval is not a gate, and the failure it permits arrives at 3am on a Friday."
+    },
+
+    "memoryPolicy": {
+      "_note": "Memory that syncs organization-wide is a broadcast channel. A wrong entry is not a local mistake; it is re-injected as context into every future session in every repository, and nothing downstream re-derives it.",
+      "states": ["candidate", "approved", "retired"],
+      "promotionRequiresHumanApproval": true,
+      "promotionCriteria": { "minimumConfidence": 0.7, "minimumRepos": 2, "bothRequired": true },
+      "autoPromote": false,
+      "autoPromoteNote": "False, deliberately. Confidence and repo-count are necessary and not sufficient: they measure how often something was observed, not whether it is true. A human names the entry as organizational guidance before it becomes organizational guidance.",
+      "writeGuards": ["redaction-scan", "injection-scan"],
+      "writeGuardsDisableable": false,
+      "readCaps": { "maxInjectedInstincts": 6, "minConfidenceForInjection": 0.7 }
+    },
+
+    "costLimits": {
+      "_note": "Off by default because a limit nobody set is a limit nobody agreed to. Turn it on per organization or project with real numbers.",
+      "enabled": false,
+      "currency": "USD",
+      "perSessionCeiling": null,
+      "perStoryCeiling": null,
+      "perRepoMonthlyCeiling": null,
+      "onExceed": "warn-and-continue",
+      "onExceedOptions": ["warn-and-continue", "block-new-phases", "block-all"],
+      "trackedBy": "scripts/telemetry.py rollup"
+    },
+
+    "telemetry": {
+      "enabled": false,
+      "scope": "local-only",
+      "network": "none",
+      "note": "Local JSONL, hash-chained, counts and durations only — never prompt or response content. Default-off because telemetry somebody did not switch on is telemetry they did not consent to. Switch it on to produce a real number instead of an asserted one.",
+      "path": "~/.orchestrator/telemetry.jsonl"
+    },
+
+    "model": {
+      "_note": "Read by the headless path only. The interactive path uses whatever model the user's Claude Code session is running, and this system deliberately does not override it — silently swapping a person's model mid-session is a surprising thing to do.",
+      "default": "claude-opus-5",
+      "routing": {
+        "grounding-guard": "claude-haiku-4-5-20251001",
+        "structural-graph": "claude-haiku-4-5-20251001",
+        "quality-sentinel": "claude-opus-5",
+        "security-review": "claude-opus-5",
+        "architecture-decision": "claude-opus-5"
+      },
+      "routingRationale": "Verification and indexing are high-volume and mechanical; judgement work is low-volume and expensive to get wrong. Routing the cheap tier at the mechanical skills is the single largest cost lever in the system.",
+      "maxRetries": 3,
+      "backoff": "exponential",
+      "timeoutSeconds": 300,
+      "fallback": null,
+      "fallbackNote": "No silent cross-family fallback. If the chosen model is unavailable the run FAILS and says so — a result produced by a different model than the one recorded is an unattributable result, and the eval scores stop meaning anything."
+    }
+  },
+
+  "organization": {},
+  "project": {},
+  "repository": {},
+  "environment": {}
+}

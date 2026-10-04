@@ -1,0 +1,30 @@
+---
+description: Implement a change in this repository, following its conventions, and verify it.
+argument-hint: "<what to implement>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-013, eval-016]
+---
+
+# Implement
+
+Write code using the `cqrs-developer` skill.
+
+## Skill Loaded
+**Required:** Read `skills/cqrs-developer/SKILL.md` and `commands/implement.md`.
+
+## Usage
+```
+/implement add a nullable ImpactInvestment decimal to the Donation model and its DTO
+/implement fix the off-by-one in the pagination cursor
+```
+
+## Output
+- The code, with every file path named
+- The verification result, with the actual command output
+- What was deliberately not done
+
+## Notes
+The first edit to a file is gated until the blast radius is stated. That is the protocol,
+not an obstacle to route around — `python scripts/graph.py importers <file>` answers it.

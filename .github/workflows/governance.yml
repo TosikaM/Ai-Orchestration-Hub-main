@@ -1,0 +1,207 @@
+# Governance gates.
+#
+# THE PREMISE
+#
+# Every quality claim this system makes is defined in a file somebody can edit. The
+# discovery ceiling is a number in config/token-budgets.json. Which hooks fire at all is
+# a table in hooks/runtime/registry.json. What counts as a secret on the way out of the
+# machine is a list of patterns in config/redaction-patterns.json. Whether an eval case
+# blocks a merge or waits for Monday is one string in evals/evals.json. None of these
+# are code; all of them are one-line edits; and a one-line edit that widens a gate looks
+# exactly like a one-line edit that fixes a typo in a diff scrolled past at speed.
+#
+# So the rule these jobs enforce is not "you may not change a gate". Gates should change
+# — a ceiling that can never move is a ceiling people route around. The rule is that
+# changing one has to be VISIBLE: reviewed by the team that owns the mechanism, and
+# accompanied by a written decision that a future reader can find when they are about to
+# widen it again for what feels like the first time.
+#
+# WHAT A WORKFLOW CAN AND CANNOT DO HERE
+#
+# A workflow cannot require a review. Only branch protection can — the "Require review
+# from Code Owners" setting on the protected branch, which lives in repository settings
+# and is not readable by the default GITHUB_TOKEN. Claiming otherwise in a job name
+# would be the exact failure this repository cares about: a gate that is believed to be
+# on because a green check said so. What these jobs do instead is verify the half that
+# is checkable from inside the repository — that the ownership rules still cover the
+# governed paths, and that a governance change arrives with a recorded decision — and
+# say plainly which half is somebody's settings page.
+
+name: Governance
+
+on:
+  pull_request:
+    # `labeled` and `unlabeled` matter. The decision gate below has a documented
+    # escape-hatch label; without these event types, applying the label does not re-run
+    # the check, the pull request stays red, and the escape hatch does not work.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ---------------------------------------------------------------- ownership
+  # The paths whose contents decide what the system will and will not allow. A change to
+  # any of them needs the eyes of the team that owns the mechanism, because the reviewer
+  # who can tell a correct redaction pattern from a subtly broken one is a specific
+  # person, not whoever happened to be free.
+  codeowners-coverage:
+    name: CODEOWNERS still covers the governed paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Governed paths have an owner
+        run: |
+          set -euo pipefail
+
+          base=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+          changed=$(git diff --name-only "$base" HEAD)
+
+          # Paths that require code-owner review. scripts/validate-structure.py is named
+          # explicitly rather than covered by a broad scripts/ entry in this list,
+          # because it is the file that decides whether any of the other checks run at
+          # all — a gate an edit to one file can disable is not a gate.
+          governed='^(config/|hooks/|\.claude-plugin/|scripts/validate-structure\.py$)'
+
+          touched=$(echo "$changed" | grep -E "$governed" || true)
+          if [ -z "$touched" ]; then
+            echo "No governed paths changed. Nothing for this job to check."
+            exit 0
+          fi
+
+          echo "This pull request changes governed paths:"
+          echo "$touched" | sed 's/^/  /'
+          echo ""
+
+          if [ ! -f .github/CODEOWNERS ]; then
+            echo ".github/CODEOWNERS is missing. Governed paths changed with no owner assigned."
+            exit 1
+          fi
+
+          # The rules that must exist for the governed paths above to have an owner.
+          # Checked on every pull request that touches a governed path, so that deleting
+          # an ownership rule and changing the thing it protected cannot be the same
+          # unreviewed commit — which is the one ordering that would defeat the whole
+          # arrangement.
+          missing=0
+          for rule in '/config/' '/hooks/' '/\.claude-plugin/' '/scripts/'; do
+            if ! grep -qE "^${rule}[[:space:]]+@" .github/CODEOWNERS; then
+              echo "  MISSING  no CODEOWNERS rule assigns an owner to ${rule//\\/}"
+              missing=1
+            else
+              echo "  ok       ${rule//\\/} has an owner"
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "Add the rule back to .github/CODEOWNERS, or, if the ownership really should"
+            echo "move, say so in an ADR and move it there rather than deleting it here."
+            exit 1
+          fi
+
+          echo ""
+          echo "Ownership rules are intact."
+          echo ""
+          echo "NOTE: this job verified that the rules EXIST. Whether a code owner's approval"
+          echo "is actually required before merge is decided by branch protection on"
+          echo "'${{ github.base_ref }}' — the 'Require review from Code Owners' setting. A"
+          echo "workflow cannot read that setting with the default token and cannot enforce it,"
+          echo "so it is worth confirming once by hand rather than assuming it from a green check."
+
+  # ---------------------------------------------------------------- decisions
+  # A governance change with no written decision behind it is the mechanism by which a
+  # system's standards drift downward without anyone choosing to lower them. Each
+  # individual widening is justified in the moment and forgotten by the next one, and
+  # six months later nobody can reconstruct why the ceiling is where it is.
+  #
+  # The requirement is deliberately cheap to satisfy: one line appended to the decision
+  # log, or an ADR for something that deserves the longer form. The cost is a minute.
+  # What it buys is that the next person to propose the same change finds the last
+  # answer, including the alternatives that were already rejected.
+  decision-required:
+    name: Governance changes carry a recorded decision
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: A governance change must touch the decision log or an ADR
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'governance:no-decision') }}
+        run: |
+          set -euo pipefail
+
+          base=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+          changed=$(git diff --name-only "$base" HEAD)
+
+          # The files that define what this system enforces. Widening any of them is a
+          # decision, whether or not it is written down as one.
+          governance='^(config/|scripts/validate-structure\.py$|hooks/runtime/registry\.json$|\.claude-plugin/hooks\.json$|evals/evals\.json$|evals/touchfiles\.json$|\.github/workflows/|\.github/CODEOWNERS$)'
+
+          # What counts as a recorded decision. memory/decisions/ is the append-only
+          # event log that scripts/decision.py writes and that later sessions actually
+          # read; docs/adr/ is the long form for a choice whose rejected alternatives
+          # are worth preserving. An ADR alone is accepted here, but an ADR that is
+          # never logged is a file no agent will ever surface — see the footer of
+          # skills/architecture-decision/references/adr-template.md.
+          evidence='^(docs/adr/.*\.md$|memory/decisions/.*\.jsonl$)'
+
+          touched=$(echo "$changed" | grep -E "$governance" || true)
+          if [ -z "$touched" ]; then
+            echo "No governance files changed. Nothing for this job to check."
+            exit 0
+          fi
+
+          echo "Governance files changed by this pull request:"
+          echo "$touched" | sed 's/^/  /'
+          echo ""
+
+          recorded=$(echo "$changed" | grep -E "$evidence" || true)
+          if [ -n "$recorded" ]; then
+            echo "Decision recorded in:"
+            echo "$recorded" | sed 's/^/  /'
+            exit 0
+          fi
+
+          cat <<'MESSAGE'
+          FAILED: a governance file changed with no decision recorded alongside it.
+
+          Every quality claim this system makes is defined in a file somebody can edit, so
+          widening a gate should require a visible decision — not because the change is
+          probably wrong, but because the next person to propose it deserves to find out
+          what was already considered.
+
+          Record it:
+
+            python scripts/decision.py log \
+              --decision "<the one-sentence decision, active voice>" \
+              --rationale "<the constraint that forced it>" \
+              --alternatives "<what was rejected, and why>"
+
+          For an architecture-level change, write the long form as well — the rejected
+          options are the part a future reader actually needs:
+
+            docs/adr/NNNN-slug.md, from skills/architecture-decision/references/adr-template.md
+            then pass --adr docs/adr/NNNN-slug.md to the command above.
+
+          If this change genuinely carries no decision — a typo in a comment, a formatting
+          pass — add the 'governance:no-decision' label to this pull request. The label is
+          the escape hatch on purpose: it is recorded in the pull request timeline with a
+          name attached, which is what separates an override from a silent bypass. A gate
+          whose only recovery is "turn it off" gets turned off permanently the first time
+          it is inconvenient.
+          MESSAGE
+          exit 1
+
+      - name: Record that the decision requirement was waived
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'governance:no-decision') }}
+        run: |
+          echo "The 'governance:no-decision' label is applied, so the decision requirement is waived."
+          echo "This line exists so the waiver appears in the run log as well as the pull request"
+          echo "timeline. A waiver nobody can find later is indistinguishable from a gate that"
+          echo "never ran."

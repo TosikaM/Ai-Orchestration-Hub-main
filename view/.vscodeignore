@@ -1,0 +1,22 @@
+# What NOT to ship inside the .vsix.
+#
+# `npm run bundle` produces a single out/extension.js, so the TypeScript sources, the
+# unbundled per-file emit from `npm run compile`, and every development dependency are
+# dead weight in the package. The negation on the next-to-last rule is what keeps the
+# one file the manifest's `main` actually points at.
+
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+**/*.ts
+**/*.map
+tsconfig.json
+.gitignore
+.eslintrc*
+*.vsix
+
+# Keep only the bundle from out/. Order matters: the exclusion is stated first and the
+# single re-inclusion follows it.
+out/**
+!out/extension.js

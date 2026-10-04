@@ -1,0 +1,27 @@
+---
+description: Compose a multi-tool MCP chain with per-step budgets and declared fallbacks.
+argument-hint: "<the goal>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# MCP Compose
+
+Plan a tool chain using the `mcp-tool-composer` skill.
+
+## Skill Loaded
+**Required:** Read `skills/mcp-tool-composer/SKILL.md` and `commands/mcp-compose.md`.
+
+## Usage
+```
+/mcp-compose create stories from the requirements doc and attach them to the epic
+```
+
+## Output
+The chain — step, tool, purpose, budget, fallback — and the MCP surface cost against
+the ceiling.
+
+## Notes
+Plans, does not execute. Never invents a tool name; composes from the registry.

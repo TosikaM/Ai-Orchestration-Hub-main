@@ -1,0 +1,28 @@
+---
+description: Build, refresh, or query the cached structural symbol index.
+argument-hint: "[build|find <symbol>|importers <file>|summary]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-012]
+---
+
+# Graph
+
+Index and query using the `structural-graph` skill.
+
+## Skill Loaded
+**Required:** Read `skills/structural-graph/SKILL.md` and `commands/graph.md`.
+
+## Usage
+```
+/graph build
+/graph importers src/services/user.ts
+/graph find UserService
+```
+
+## Output
+The query result with file:line for every symbol, plus index size and age.
+
+## Notes
+Never asserts a symbol the index does not contain. A stale cache is rebuilt, never served.

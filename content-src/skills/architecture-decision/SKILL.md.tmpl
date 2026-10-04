@@ -1,0 +1,84 @@
+---
+name: architecture-decision
+description: Frames design options with real tradeoffs and records the outcome as an architecture decision record.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Write, Bash]
+metadata:
+  version: 1.0.0
+  category: design
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** should we, tradeoff, decide, alternative, ADR, "which approach", "why is it like this".
+**USE FOR:** framing a design choice and recording it durably.
+**NOT FOR:** implementing the chosen option — that is `cqrs-developer`. Analyzing
+existing structure — that is `repo-context-builder`.
+
+## The Protocol
+
+1. **State the decision as a question with a real fork in it.** If there is only one
+   viable answer, there is no decision — say so and stop. A manufactured comparison
+   produces an ADR that actively misleads its future reader.
+2. **Recover the constraints from evidence** — `.github/orchestrator-context.md`, the
+   structural graph, the existing decision log, and `config/architecture-baseline.json`
+   for the recorded floor. Cite them. A tradeoff argued against imagined constraints is
+   fiction, and fiction formatted as an ADR outlives the person who wrote it.
+3. **Produce at least two options.** Each gets: how it works · what it costs · what it
+   forecloses. The third column is the one people skip and the one that matters.
+4. **Recommend one, and write the strongest argument against your recommendation.** If
+   you cannot write a good one, you do not yet understand the tradeoff.
+5. **Record consequences, including the reversal cost** — what it takes to undo this in
+   six months, in hours and in blast radius.
+6. **Append a decision event:**
+   `python scripts/decision.py log --adr docs/adr/NNNN-<slug>.md --decision "..." --rationale "..."`
+
+Step 6 is what stops the ADR being a diary entry. An ADR that is not in the decision log
+is never surfaced to the agent who needs it in four months — and that agent is usually
+about to re-propose the option this ADR rejected.
+
+## Rejection Is Mandatory Content
+
+An ADR listing only the chosen option is a press release.
+
+## Greenfield: There Is No Repo To Defer To
+
+Everywhere else this system says the repository's conventions outrank hub defaults. A new
+project gives that rule nothing to point at, and an agent without a floor falls back on
+what its training recalls — which is how a project starts two framework majors behind, on
+a dependency that has since changed licence.
+
+The floor is `config/architecture-baseline.json`, read via
+`lib/config.js:baselineForStack(<stackId>)`. Its stack ids are the ones in
+`config/stack-mappings.json`, which detects what a repo **is**; the baseline records what
+a new one **should be**. Do not confuse a measurement for a decision.
+
+| Situation | The baseline is | What you do |
+|---|---|---|
+| New project | Prescriptive | Apply `architecture.default`, `modernCapabilities`, `forbiddenDependencies`. Departing from one is an ADR. |
+| Existing repo | Advisory | Report the gap. Never rewrite working code to close it; a migration is its own decision. |
+| Stack has no entry | Absent | `baselineForStack` returns null. Say so and ask — do not use whichever entry is first. |
+
+**Versions in that file are recorded, not measured.** Each carries `verifiedOn` and a
+`source`, and most are `model-recall`: written from training knowledge and never checked
+against a release feed. Quote the recorded floor *and* the version you observe, and name
+which is which. Observed newer than the floor: use the observed one. Observed older: that
+is a finding to report, not a reason to design backwards.
+
+`productionGrade.concerns` in the same file defines what "production-grade" means here —
+fourteen concerns, each with a `gate` marking it due before the first PR or before
+production. A concern you did not address is disclosed, not omitted.
+
+## Output
+
+`docs/adr/NNNN-<slug>.md`, following `references/adr-template.md`, plus the decision-log
+event.
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{CONFUSION_PROTOCOL}}
+
+{{GROUNDING_CONTRACT}}
+
+{{LESSONS_LEARNED}}

@@ -1,0 +1,32 @@
+---
+description: Bootstrap or refresh this repository's orchestrator context and register it with the hub.
+argument-hint: "[--refresh]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# Orchestrator Init
+
+Bootstrap this repository using the `repo-context-builder` skill, then register it.
+
+## Skill Loaded
+**Required:** Read `skills/repo-context-builder/SKILL.md` and `commands/analyze.md`.
+Follow that protocol exactly — this file does not restate it.
+
+## Usage
+```
+/orchestrator-init
+/orchestrator-init --refresh
+```
+
+## Output
+- `.github/orchestrator-context.md`
+- `.github/orchestrator-install.json` — the install state record
+- A registry entry in `~/.orchestrator/state/connected-repos.json`
+
+## Notes
+Run this before anything else in a new repository. Every other skill reads the context
+file, and a pipeline run against an unprofiled repo produces confident guesses at every
+phase.

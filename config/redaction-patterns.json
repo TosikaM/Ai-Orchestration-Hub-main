@@ -1,0 +1,66 @@
+{
+  "$schema": "./redaction-patterns.schema.json",
+  "version": 1,
+  "description": "Canonical redaction taxonomy. One source, consumed by scripts/redact.py, lib/redact.js, the memory write path, and the generated release/document skill docs. Calibration rule: a gate that cries wolf gets ignored, so only genuinely-secret credentials are HIGH.",
+
+  "tiers": {
+    "HIGH": "Genuinely-secret credential. BLOCKS the write or the send. There is intentionally no per-pattern key to disable HIGH blocking.",
+    "MEDIUM": "PII, legal or damaging content, internal-leak, or a credential shape with a high false-positive rate. CONFIRMS with the user.",
+    "LOW": "Surfaced only. No prompt, no block."
+  },
+
+  "visibilityRule": "Repository visibility never promotes a tier. A public repo earns sterner per-finding confirmation on MEDIUM findings; it does not turn MEDIUM into HIGH. Auto-promotion is how a gate becomes noise, and noise is how a gate gets switched off.",
+
+  "redosRule": "Every regex must be linear-time. No nested unbounded quantifiers. `python scripts/redact.py --lint` fails CI on a catastrophic form.",
+
+  "patterns": [
+    { "id": "aws.access_key", "tier": "HIGH", "category": "secret", "regex": "\\b(AKIA[0-9A-Z]{16})\\b", "description": "AWS access key id" },
+    { "id": "aws.secret_key", "tier": "HIGH", "category": "secret", "regex": "\\b([A-Za-z0-9/+=]{40})\\b", "nearRegex": "aws_secret_access_key", "nearWindow": 120, "description": "AWS secret key, proximity-gated so ordinary base64 does not trip it" },
+    { "id": "anthropic.api_key", "tier": "HIGH", "category": "secret", "regex": "\\b(sk-ant-[A-Za-z0-9_-]{20,})\\b", "description": "Anthropic API key" },
+    { "id": "openai.api_key", "tier": "HIGH", "category": "secret", "regex": "\\b(sk-[A-Za-z0-9]{32,})\\b", "description": "OpenAI-style secret key" },
+    { "id": "github.pat", "tier": "HIGH", "category": "secret", "regex": "\\b(gh[pousr]_[A-Za-z0-9]{36,})\\b", "description": "GitHub personal access token" },
+    { "id": "azure.connection_string", "tier": "HIGH", "category": "secret", "regex": "(AccountKey=[A-Za-z0-9+/=]{40,})", "description": "Azure storage connection string" },
+    { "id": "private.key_block", "tier": "HIGH", "category": "secret", "regex": "(-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----)", "description": "Private key block" },
+    { "id": "slack.token", "tier": "HIGH", "category": "secret", "regex": "\\b(xox[baprs]-[A-Za-z0-9-]{10,})\\b", "description": "Slack token" },
+    { "id": "npm.token", "tier": "HIGH", "category": "secret", "regex": "\\b(npm_[A-Za-z0-9]{36})\\b", "description": "npm access token" },
+    { "id": "generic.bearer", "tier": "HIGH", "category": "secret", "regex": "[Aa]uthorization\\s*:\\s*Bearer\\s+([A-Za-z0-9._~+/-]{24,})", "description": "Bearer token in a literal header" },
+
+    { "id": "stripe.publishable", "tier": "MEDIUM", "category": "secret", "regex": "\\b(pk_live_[A-Za-z0-9]{20,})\\b", "description": "Stripe publishable key. Public by design, but routinely pasted alongside the secret one." },
+    { "id": "google.api_key", "tier": "MEDIUM", "category": "secret", "regex": "\\b(AIza[A-Za-z0-9_-]{35})\\b", "description": "Google API key. Frequently domain-restricted; context decides." },
+    { "id": "jwt", "tier": "MEDIUM", "category": "secret", "regex": "\\b(eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,})\\b", "description": "JWT. Often an expired sample in a test fixture." },
+    { "id": "env.kv", "tier": "MEDIUM", "category": "secret", "regex": "^\\s*[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)\\s*=\\s*(\\S{8,})\\s*$", "description": "Environment-style credential assignment" },
+    { "id": "conn.password", "tier": "MEDIUM", "category": "secret", "regex": "(?:[Pp]assword|[Pp]wd)\\s*=\\s*([^;\\s\"']{6,})", "description": "Password in a connection string" },
+    { "id": "pii.email", "tier": "MEDIUM", "category": "pii", "regex": "\\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b", "autoRedactable": true, "redactToken": "<REDACTED-EMAIL>", "description": "Email address" },
+    { "id": "internal.host", "tier": "MEDIUM", "category": "internal", "regex": "\\b([a-z0-9-]+\\.(?:internal|corp|local|intranet))\\b", "description": "Internal hostname" },
+    { "id": "internal.abs_path_win", "tier": "MEDIUM", "category": "internal", "regex": "(C:\\\\Users\\\\[^\\\\\\s\"']+)", "autoRedactable": true, "redactToken": "<REDACTED-HOME>", "description": "Absolute Windows user path. Leaks a developer's username into shared memory that syncs organization-wide." },
+    { "id": "internal.abs_path_posix", "tier": "MEDIUM", "category": "internal", "regex": "(/(?:home|Users)/[A-Za-z0-9._-]+)", "autoRedactable": true, "redactToken": "<REDACTED-HOME>", "description": "Absolute POSIX home path" },
+
+    { "id": "hygiene.todo_credential", "tier": "LOW", "category": "hygiene", "regex": "(TODO:?\\s*(?:rotate|replace|remove)\\s+(?:the\\s+)?(?:key|token|secret|password))", "description": "A note that a credential needs rotating" },
+    { "id": "hygiene.localhost_port", "tier": "LOW", "category": "hygiene", "regex": "(https?://localhost:\\d{2,5})", "description": "Local development URL" }
+  ],
+
+  "suppressions": [
+    {
+      "id": "example.placeholder",
+      "regex": "(?:x{3,}|<[A-Z_]+>|YOUR_[A-Z_]+_HERE|\\.\\.\\.|example|dummy|fake|sample|placeholder|EXAMPLE)",
+      "scope": "matched-span",
+      "description": "Scoped to the matched span, not the line. A real key on the same line as the word 'example' still counts."
+    },
+    {
+      "id": "test.fixture.path",
+      "regex": "(?:__tests__|/tests?/|\\.spec\\.|\\.test\\.|/fixtures?/)",
+      "scope": "path",
+      "appliesToTiers": ["MEDIUM", "LOW"],
+      "description": "Test fixture paths suppress MEDIUM and LOW only. A HIGH-tier credential in a test file is still a HIGH-tier credential — that is where they most often get committed."
+    }
+  ],
+
+  "sinks": {
+    "memory.shared.write": { "polarity": "fail-closed", "why": "memory/shared/ syncs to every connected repo. A captured credential is an organization-wide replication event, not a local mistake." },
+    "memory.decision.write": { "polarity": "fail-closed", "why": "The decision log is re-injected into future prompts, which makes it both a storage surface and an injection surface." },
+    "context.file.write": { "polarity": "fail-closed", "why": "orchestrator-context.md is committed in some repos and is the densest artifact in the system." },
+    "release.artifact.write": { "polarity": "fail-closed", "why": "Release notes and CHANGELOG entries are published." },
+    "chat.stream": { "polarity": "fail-open", "why": "Blocking the user's primary interaction over a scan is a worse outcome than a warning (P5)." },
+    "hub.clone": { "polarity": "fail-closed", "why": "Pulls executable content — SKILL.md files that steer agents." }
+  }
+}

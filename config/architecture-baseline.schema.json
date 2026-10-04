@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Architecture baseline",
+  "description": "Prescriptive architecture floors for new work, keyed to the stack ids in stack-mappings.json. stack-mappings.json answers 'what is this repo?'; this file answers 'what should a new one be?'. The two are deliberately separate files because detection is a measurement and a baseline is a decision.",
+  "type": "object",
+  "required": ["$schema", "version", "description", "versionPolicy", "precedence", "productionGrade", "baselines"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+
+    "versionPolicy": {
+      "type": "object",
+      "description": "How the version numbers below are to be read. They are recorded values with a date, not live measurements.",
+      "required": ["rule", "onDrift", "sourceMeaning"],
+      "additionalProperties": false,
+      "properties": {
+        "rule": { "type": "string" },
+        "onDrift": { "type": "string" },
+        "sourceMeaning": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+
+    "precedence": {
+      "type": "object",
+      "description": "Greenfield is prescriptive; brownfield is advisory. Encoded as data so no reader has to infer it from prose.",
+      "required": ["greenfield", "brownfield", "repoOverride"],
+      "additionalProperties": false,
+      "properties": {
+        "greenfield": { "type": "string" },
+        "brownfield": { "type": "string" },
+        "repoOverride": { "type": "string" }
+      }
+    },
+
+    "productionGrade": {
+      "type": "object",
+      "description": "Stack-independent definition of 'production-grade enterprise'. A stack baseline names how it satisfies each of these; it never redefines the list.",
+      "required": ["concerns"],
+      "additionalProperties": false,
+      "properties": {
+        "concerns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "requirement", "why"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "requirement": { "type": "string" },
+              "why": { "type": "string" },
+              "gate": {
+                "type": "string",
+                "enum": ["before-first-pr", "before-production", "advisory"],
+                "description": "When the concern must be satisfied. Absent means before-production."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "baselines": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "appliesToStacks", "runtime", "architecture", "concernImplementations"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "appliesToStacks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" },
+            "description": "Stack ids from stack-mappings.json detectionOrder. Every id there must be covered by exactly one baseline."
+          },
+
+          "runtime": {
+            "type": "object",
+            "required": ["name", "minimum", "verifiedOn", "source"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "minimum": { "type": "string", "description": "The binding floor for new work." },
+              "knownLatestAtAuthoring": { "type": "string", "description": "What the author believed was current on verifiedOn. Informational — never binding." },
+              "channel": { "type": "string", "description": "LTS, STS, stable, edition, etc." },
+              "cadence": { "type": "string", "description": "How fast this number rots, so a reader can judge how much to trust it." },
+              "verifiedOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}$" },
+              "source": { "type": "string", "enum": ["model-recall", "user-directed", "measured"] }
+            }
+          },
+
+          "language": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "minimum": { "type": "string" },
+              "required": { "type": "array", "items": { "type": "string" }, "description": "Language-level settings that must be on, e.g. nullable reference types, strict mode." }
+            }
+          },
+
+          "architecture": {
+            "type": "object",
+            "required": ["default", "why"],
+            "additionalProperties": false,
+            "properties": {
+              "default": { "type": "string", "description": "The shape a new project takes unless a recorded ADR says otherwise." },
+              "why": { "type": "string" },
+              "escalateTo": { "type": "string", "description": "The next shape up, and the signal that justifies moving to it." },
+              "layers": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+
+          "modernCapabilities": {
+            "type": "array",
+            "description": "Version-gated features new work is expected to use rather than the older equivalent it replaced.",
+            "items": {
+              "type": "object",
+              "required": ["use", "insteadOf", "since"],
+              "additionalProperties": false,
+              "properties": {
+                "use": { "type": "string" },
+                "insteadOf": { "type": "string" },
+                "since": { "type": "string" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+
+          "forbiddenDependencies": {
+            "type": "array",
+            "description": "Dependencies a new project must not take, each with the reason and the replacement. A ban with no replacement is an obstacle, not a decision.",
+            "items": {
+              "type": "object",
+              "required": ["id", "reason", "instead"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "since": { "type": "string", "description": "The version at which the reason began to apply. Absent means all versions." },
+                "reason": { "type": "string" },
+                "instead": { "type": "string" }
+              }
+            }
+          },
+
+          "concernImplementations": {
+            "type": "object",
+            "description": "Keys are ids from productionGrade.concerns; values name the concrete mechanism for this stack. A concern with no entry is an admitted gap, not a silent pass.",
+            "additionalProperties": { "type": "string" }
+          },
+
+          "testing": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "unit": { "type": "string" },
+              "integration": { "type": "string" },
+              "e2e": { "type": "string" },
+              "coverageFloor": { "type": "integer", "minimum": 0, "maximum": 100 }
+            }
+          },
+
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

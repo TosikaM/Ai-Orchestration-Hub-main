@@ -1,0 +1,72 @@
+{
+  "$schema": "./pipeline-graph.schema.json",
+  "version": 2,
+  "entry": "analyze",
+  "description": "The SDLC pipeline as a DAG rather than a fixed array. This is what lets review and test genuinely run in parallel — the skill protocol always described that, but a flat array could not do it.",
+  "phases": {
+    "analyze": {
+      "next": ["implement"],
+      "gate": 0,
+      "humanGate": true,
+      "agent": "analyst",
+      "skill": "repo-context-builder",
+      "description": "Trace data flow, identify every file that changes, map dependencies."
+    },
+    "implement": {
+      "next": ["review", "test"],
+      "gate": 0,
+      "humanGate": false,
+      "agent": "developer",
+      "skill": "cqrs-developer",
+      "description": "Implement following repo conventions; apply best practices; avoid known anti-patterns."
+    },
+    "review": {
+      "next": ["deploy"],
+      "gate": 80,
+      "humanGate": false,
+      "parallelWith": ["test"],
+      "agent": "reviewer",
+      "skill": "quality-sentinel",
+      "description": "Score 0-100. Conventions, edge cases, security, tests."
+    },
+    "test": {
+      "next": ["deploy"],
+      "gate": 80,
+      "humanGate": false,
+      "parallelWith": ["review"],
+      "agent": "qa",
+      "skill": "quality-sentinel",
+      "description": "Unit and integration tests with edge-case coverage."
+    },
+    "deploy": {
+      "next": ["complete"],
+      "gate": 0,
+      "humanGate": true,
+      "agent": "orchestrator",
+      "skill": "release-engineering",
+      "description": "PR description, CI readiness, release notes."
+    },
+    "complete": {
+      "next": [],
+      "gate": 0,
+      "humanGate": false,
+      "agent": "orchestrator",
+      "skill": "continuous-learning",
+      "description": "Capture learnings; summarize."
+    }
+  },
+  "rules": {
+    "activateWhenAllParentsComplete": true,
+    "checkpointAfterEveryGate": true,
+    "checkpointOnPreCompact": true,
+    "checkpointPath": "memory/sessions/{pipelineId}.checkpoint.json",
+    "bandPath": "memory/sessions/{pipelineId}.band.json",
+    "gateArtifactPath": "memory/sessions/{pipelineId}.gate-{phase}.md",
+    "gateVerdictPath": "memory/sessions/{pipelineId}.gate-{phase}.json",
+    "maxGateFailuresBeforeEscalation": 3
+  },
+  "humanGateProtocol": {
+    "mechanism": "The phase writes a review artifact, then stops. A Stop hook refuses to let the session end while a gate artifact exists with no matching verdict file. The verdict is written either by the view plane's gate panel or by `python scripts/pipeline.py approve <pipelineId> <phase>`.",
+    "why": "A gate whose entire implementation is a toast notification is a request, not a gate. Blocking Stop on a verdict file uses the same insight as the fact-forcing gate: own the action stream, not the generation stream."
+  }
+}

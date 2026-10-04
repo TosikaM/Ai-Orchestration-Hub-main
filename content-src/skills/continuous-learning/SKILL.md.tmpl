@@ -1,0 +1,117 @@
+---
+name: continuous-learning
+description: Captures, promotes, and queries two-tier memory so a lesson learned in one repo reaches the others.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]
+metadata:
+  version: 1.0.0
+  category: memory
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** learn, remember, "we always", "last time", memory, instinct, "what did we decide".
+**USE FOR:** capturing a durable lesson, promoting a repo instinct to shared memory,
+querying what is already known.
+**NOT FOR:** recording an architecture decision — that is `architecture-decision`.
+Client requirements — that is `knowledge-base`.
+
+## The Tiers
+
+| Tier | Path | Scope | Synced |
+|------|------|-------|--------|
+| Shared | `memory/shared/` | All repos | Yes |
+| Per-repo | `memory/repos/<name>/` | One repo | Only that repo |
+| Decisions | `memory/decisions/<slug>.jsonl` | One repo, append-only | No — promote explicitly |
+| Session | `memory/sessions/` | One pipeline run | No, git-ignored |
+
+## The Promotion Rule, And The Gate After It
+
+An entry becomes a **candidate** for shared memory when **confidence ≥ 0.7 AND it has
+been observed in ≥ 2 repos.** Both conditions, not either.
+
+A high-confidence lesson from a single repository is usually a fact about that
+repository, not a general truth. Promoting it early is exactly how a shared memory fills
+with advice that is wrong everywhere else — and shared memory is loaded into every
+session in every repo, so a wrong entry is expensive in a way a wrong comment is not.
+
+**Meeting the criteria does not promote anything.** The lifecycle is:
+
+```
+candidate ──criteria met──> pending-approval ──human──> approved ──> retired
+                                             └─human──> rejected (durable)
+```
+
+Confidence and repo-count measure how OFTEN something was observed. They do not measure
+whether it is TRUE, and no arithmetic over observation counts ever will. A human names an
+entry as organizational guidance before it becomes organizational guidance:
+
+```
+python scripts/memory.py promote            # propose candidates, write review artifacts
+python scripts/memory.py pending            # what is awaiting a decision
+python scripts/memory.py approve <id> --by "<name>"
+python scripts/memory.py reject  <id> --reason "..."
+python scripts/memory.py retire  <id> --reason "..."
+```
+
+Rejection is durable, deliberately: without it a rejected entry keeps meeting the
+criteria and gets re-proposed on every run, which teaches the reviewer to stop reading.
+Retirement keeps the entry rather than deleting it — what the organization believed, and
+when it stopped believing it, is part of the record.
+
+The test to apply when approving: *would you write this on the team wiki as guidance for
+every project?* If not, reject it and say why.
+
+## The Confidence Arithmetic
+
+Confidence is not a feeling; something computes it:
+
+```
+initial:  0.4    one observation, one repo — deliberately below the 0.7 floor, so no
+                 single event can promote anything no matter how sure the agent felt
++0.15            reinforced in a NEW repo          ← the primary path to promotion
++0.05            reinforced in a repo already seen
+-0.25            a counter-example was recorded
+-0.05 / 90 days  decay since lastReinforced, applied lazily at READ time
+clamp(0.1, 0.95)
+```
+
+Decay is **for ranking, never for deletion.** Deletion-by-decay stays deferred because
+calibrating a rate needs real usage data and a wrong rate would silently discard useful
+learnings. Ranking decay discards nothing — it only stops a three-year-old instinct from
+outranking last week's — so a wrong rate there is cheap and correctable.
+
+## Deduplicate Before You Append
+
+Compare on **title and resolution, never on context.** Context is repo-specific and
+differs even when the lesson is word-for-word identical, so comparing it guarantees you
+never detect a duplicate. A strong match reinforces the existing entry instead of
+appending; that reinforcement is what moves confidence toward the promotion floor.
+
+## Every Write Is Guarded
+
+`scripts/memory.py` is the only supported write path, and it runs the redaction and
+injection scan first. There is no flag that skips it.
+
+Two reasons, and the second is the less obvious one. Shared memory syncs
+organization-wide, so a captured credential is a replication event rather than a local
+mistake. And stored memory is re-injected into future prompts, which makes the memory
+store an **injection surface** as well as a storage surface — a "resolution" that says
+"ignore previous instructions" is a delayed instruction, read back to an agent in three
+months, in a different repo, with no human in the loop.
+
+## Commands
+
+```
+python scripts/memory.py capture --type anti-pattern --title "..." --resolution "..."
+python scripts/memory.py search "<query>"
+python scripts/memory.py promote            # apply the promotion rule
+python scripts/memory.py prune              # interactive; below 0.3 and cold 180 days
+```
+
+{{GROUNDING_CONTRACT}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

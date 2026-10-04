@@ -1,0 +1,27 @@
+---
+description: Run the six-phase pre-PR gate — build, types, lint, tests, security, diff review.
+argument-hint: ""
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# Verify
+
+Run the pre-PR gate using the `verification-loop` skill.
+
+## Skill Loaded
+**Required:** Read `skills/verification-loop/SKILL.md` and `commands/verify.md`.
+
+## Usage
+```
+/verify
+```
+
+## Output
+The six-phase table, each row pass / fail / not run, with the actual command output.
+
+## Notes
+"Not run" is never reported as "passed". A green report containing a step that silently
+did not execute is worse than a red one, because it ends the investigation.

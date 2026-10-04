@@ -1,0 +1,70 @@
+---
+name: autonomous-loop
+description: Runs iterate-until-done loops behind a safety kernel with stop conditions, stall detection, and escalation.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]
+metadata:
+  version: 1.0.0
+  category: workflow
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** loop, keep going, iterate until, "until the tests pass", autonomous.
+**USE FOR:** a bounded iterate-until-done run with a hard kernel around it.
+**NOT FOR:** a single change — that is `cqrs-developer`. A pipeline — that is
+`sdlc-orchestrator`.
+
+## The Safety Kernel
+
+Hard stops. Whichever comes first, the loop **halts** — these are not advisory:
+
+| Limit | Value |
+|-------|-------|
+| Iterations | 5 |
+| Tokens | 50,000 |
+| Wall clock | 10 minutes |
+| Stall | no state change across two consecutive iterations |
+
+On any stop: report what changed, what did not, and the specific thing that is blocking.
+Escalate to the human with a concrete question, not with "I was unable to complete this".
+
+**Stall detection matters more than the other three.** An agent that is looping without
+changing state is not making slow progress — it is making none, and the token and time
+limits will let it burn the full budget proving that. Two identical iterations is
+already the answer.
+
+## Long-Run Execution
+
+Any loop expected to exceed five minutes must run detached:
+
+```powershell
+pwsh scripts/detach.ps1 -Label "fix-flaky-tests" -Timeout 1800 -Lock -Command "..."
+```
+
+Why: a plain background task lives in the harness's process group, so a signal at a turn
+boundary, a stopped monitor, or an interruption kills the run mid-flight. Detached runs
+get a fresh session, a machine-wide lock so concurrent worktrees serialize instead of
+saturating the API, a watchdog timeout, and a run-scoped log.
+
+**The poller breaks on the sentinel, never on a timeout.** Every detached run writes
+`### EXIT=<code> ###` as its last line, on success and on failure alike. Silence is never
+mistaken for success — a poller that gives up on a timer cannot tell a finished run from
+a killed one.
+
+## Per-Iteration Discipline
+
+1. State the goal and the stop condition in one line each, before iteration 1.
+2. Every iteration: what changed, what the check said, what is next.
+3. Never edit a check to make it pass — hook-blocked, and the hook is right.
+4. If iteration 3 is doing something different from iteration 1's stated plan, stop.
+   That is drift, and the loop is now solving a problem nobody asked about.
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{CONFUSION_PROTOCOL}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

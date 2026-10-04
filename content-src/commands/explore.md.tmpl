@@ -1,0 +1,28 @@
+---
+description: Fast read-only investigation, confidence-tagged, with an explicit not-examined list.
+argument-hint: "<what to investigate>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-007]
+---
+
+# Explore
+
+Read-only fast path using the `repo-context-builder` skill.
+
+## Skill Loaded
+**Required:** Read `skills/repo-context-builder/SKILL.md` and `commands/explore.md`.
+
+## Usage
+```
+/explore how is authentication wired up here
+/explore what does the build pipeline actually run
+```
+
+## Output
+- A findings summary, every claim confidence-tagged
+- An explicit list of what was NOT examined
+
+## Notes
+Does not write the context file. Use `/analyze` for that.

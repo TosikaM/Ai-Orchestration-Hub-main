@@ -1,0 +1,791 @@
+{
+  "$schema": "./architecture-baseline.schema.json",
+  "version": 1,
+  "description": "What a NEW project should be, per stack. config/stack-mappings.json answers the opposite question — 'what is this repo?' — by matching indicator files. These are two different acts: detection is a measurement, a baseline is a decision, and merging them would make it impossible to tell a recorded choice from an observed fact. Keyed to the same stack ids so a reader can join them.",
+
+  "versionPolicy": {
+    "rule": "Every version below is a recorded value with a date and a source, never a live measurement. State the recorded value AND the version you actually observe in the toolchain, and name which is which. An agent that reports only the recorded number is quoting this file back at itself, which is not evidence.",
+    "onDrift": "When the observed toolchain is NEWER than the recorded minimum, use the observed one and say so — the minimum is a floor, not a ceiling. When it is OLDER, that is a finding: report it, do not silently downgrade the design, and do not propose an API the project cannot compile. When the gap is more than one major, say plainly that this file is stale rather than pretending the number is current.",
+    "sourceMeaning": {
+      "measured": "Read from a live toolchain or lockfile on verifiedOn. Trustworthy.",
+      "user-directed": "The user stated this explicitly. Binding regardless of what a corpus or a default says.",
+      "model-recall": "Written from the authoring model's training knowledge, NOT checked against a release feed. Treat as a plausible floor and verify before quoting it to anyone. This is the weakest source in the file and most entries carry it."
+    }
+  },
+
+  "precedence": {
+    "greenfield": "PRESCRIPTIVE. There is no repository convention to defer to yet, so this file supplies one. Departing from it is a decision that gets recorded as an ADR via scripts/decision.py, not a silent choice.",
+    "brownfield": "ADVISORY ONLY. Report the gap between the baseline and what the repo does; never rewrite working code to close it, and never introduce a second mechanism alongside an existing one. A migration is its own decision with its own ADR.",
+    "repoOverride": "A consumer repository's own CLAUDE.md or copilot-instructions.md outranks every value in this file, in both directions. A hub that overrides a team's stated convention is a hub that gets uninstalled."
+  },
+
+  "productionGrade": {
+    "concerns": [
+      { "id": "observability", "gate": "before-first-pr",
+        "requirement": "Structured logging with a correlation id propagated across every boundary, plus traces and metrics exported through a vendor-neutral API.",
+        "why": "Retrofitting correlation ids means touching every call site at once. It costs almost nothing on day one and is a multi-week project after the first incident." },
+      { "id": "health-and-readiness", "gate": "before-first-pr",
+        "requirement": "Separate liveness and readiness signals. Readiness must actually check the dependencies the service cannot serve without.",
+        "why": "A liveness probe that returns 200 because the process is running will keep a service in the load balancer while every request fails on a dead database." },
+      { "id": "configuration", "gate": "before-first-pr",
+        "requirement": "Bound once into a typed object and validated at startup. No untyped key lookups deep in business logic.",
+        "why": "A typo in an untyped config key becomes a null at three in the morning instead of a failure to start." },
+      { "id": "secrets-management", "gate": "before-first-pr",
+        "requirement": "Secrets come from an external store or injected environment. Never committed, never defaulted to a working value in source.",
+        "why": "A secret with a working default in source gets deployed as-is, and the commit that introduced it is the one nobody reviews closely." },
+      { "id": "authn-authz", "gate": "before-production",
+        "requirement": "Deny by default. Authorization decided at a single enforcement point, not scattered across handlers.",
+        "why": "Allow-by-default plus per-handler checks means every new endpoint is unprotected until someone remembers. The failure is silent and looks like working code." },
+      { "id": "input-validation", "gate": "before-first-pr",
+        "requirement": "Validated at the boundary against an explicit schema, before it reaches domain logic.",
+        "why": "Validation spread through the domain layer cannot be audited, and the one path that skipped it is the one that gets found." },
+      { "id": "error-contract", "gate": "before-first-pr",
+        "requirement": "A typed, documented error shape. Never a raw stack trace or an internal exception message to a client.",
+        "why": "Stack traces leak framework versions, file paths, and query structure — reconnaissance handed over for free." },
+      { "id": "resilience", "gate": "before-production",
+        "requirement": "Every outbound call carries an explicit timeout. Retries use exponential backoff with jitter and are applied only to idempotent operations.",
+        "why": "A missing timeout turns one slow dependency into thread-pool exhaustion. Retries without jitter turn a blip into a synchronised stampede." },
+      { "id": "data-migrations", "gate": "before-first-pr",
+        "requirement": "Versioned, source-controlled, forward-only, and reviewed like code. Expand-then-contract for anything that breaks a running deployment.",
+        "why": "A schema change applied by hand cannot be rolled back or reproduced in another environment, and nobody can tell which environments received it." },
+      { "id": "testing", "gate": "before-first-pr",
+        "requirement": "Unit tests on domain logic, integration tests against a real dependency rather than a mock of it, and end-to-end coverage of the critical user paths.",
+        "why": "A suite that mocks the database proves the mock works. The bugs that reach production live in the seam that mocking removed." },
+      { "id": "supply-chain", "gate": "before-first-pr",
+        "requirement": "A committed lockfile, automated dependency vulnerability scanning, and a generated SBOM.",
+        "why": "Without a lockfile the build is not reproducible, so the artifact that passed CI is not provably the artifact that shipped." },
+      { "id": "ci-gate", "gate": "before-first-pr",
+        "requirement": "Build, test, lint, and a security scan all pass before merge, enforced by the platform rather than by convention.",
+        "why": "A gate that relies on people remembering is not a gate. It holds until the first urgent Friday deploy." },
+      { "id": "api-contract", "gate": "before-production",
+        "requirement": "Versioned and machine-readable, generated from the code rather than maintained beside it.",
+        "why": "Hand-maintained API docs drift within weeks, and a consumer that trusts them breaks in a way the producer cannot reproduce." },
+      { "id": "rollback", "gate": "before-production",
+        "requirement": "A documented, exercised rollback path — including what happens to data written by the version being rolled back.",
+        "why": "A rollback plan first attempted during an incident is a hypothesis, and the data written by the bad version is the part it usually forgets." }
+    ]
+  },
+
+  "baselines": [
+    {
+      "id": "dotnet-service",
+      "name": ".NET service (command and query sides)",
+      "appliesToStacks": ["dotnet-cqrs", "dotnet-query"],
+      "runtime": { "name": ".NET", "minimum": "10.0", "knownLatestAtAuthoring": "10.0", "channel": "LTS", "cadence": "One major each November; even-numbered majors are LTS with 3 years support, odd are STS with 18 months.", "verifiedOn": "2026-05", "source": "user-directed" },
+      "language": { "name": "C#", "minimum": "14", "required": ["Nullable=enable", "ImplicitUsings=enable", "TreatWarningsAsErrors=true", "LangVersion=latest"] },
+      "architecture": {
+        "default": "Modular monolith organised in vertical slices — one feature owns its endpoint, handler, validation, and persistence together. Split CQRS onto separate read and write models only where the read genuinely diverges from the write.",
+        "why": "A vertical slice keeps everything a change touches in one folder, so the blast radius of a feature is visible in the directory tree. A modular monolith gets the module boundaries of microservices without paying for a network hop and a distributed transaction before there is any evidence that either is needed. CQRS applied uniformly to every entity is ceremony: most entities read the way they write.",
+        "escalateTo": "Extract a module into its own service when it needs an independent deploy cadence or independent scaling AND owns data no other module reads directly. Two of the three is not enough — the network boundary costs more than the coupling it removes.",
+        "layers": ["Api (endpoints, contracts)", "Application (handlers, validation, orchestration)", "Domain (entities, invariants — no framework references)", "Infrastructure (persistence, outbound clients)"]
+      },
+      "modernCapabilities": [
+        { "use": "Minimal APIs with TypedResults and endpoint groups", "insteadOf": "MVC controllers for new services", "since": ".NET 6, matured through 10", "note": "TypedResults keeps the response type in the signature, so OpenAPI generation stops guessing." },
+        { "use": "Primary constructors and collection expressions", "insteadOf": "Boilerplate constructor assignment and new List<T> { ... }", "since": "C# 12" },
+        { "use": "record and required members", "insteadOf": "Mutable DTO classes with settable properties", "since": "C# 9 / C# 11", "note": "required moves a missing-field bug from runtime null to compile error." },
+        { "use": "Keyed DI services", "insteadOf": "Factory-with-switch dispatch on a string", "since": ".NET 8" },
+        { "use": "TimeProvider", "insteadOf": "DateTime.UtcNow inline", "since": ".NET 8", "note": "This is what makes time-dependent logic testable without a custom IClock." },
+        { "use": "System.Text.Json with source generation", "insteadOf": "Reflection-based serialization", "since": ".NET 6", "note": "Also the prerequisite for Native AOT." },
+        { "use": "IAsyncEnumerable for streaming reads", "insteadOf": "Materialising a whole result set into a List", "since": ".NET 3.1" },
+        { "use": "Built-in resilience via Microsoft.Extensions.Http.Resilience", "insteadOf": "Hand-rolled retry loops, or Polly wired by hand", "since": ".NET 8" },
+        { "use": ".NET Aspire for local orchestration and service discovery", "insteadOf": "A hand-maintained docker-compose and hardcoded localhost ports", "since": ".NET 8", "note": "Optional. Adopt it for multi-service solutions; it is overhead for a single service." },
+        { "use": "EF Core compiled queries and AsNoTracking for read paths", "insteadOf": "Tracking every entity on a read-only query", "since": "EF Core 6" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "MediatR", "since": "12.0", "reason": "Commercially licensed from v12. The in-process dispatch surface a vertical-slice codebase actually needs is roughly forty lines, which is a poor trade for a paid dependency sitting on every request path.", "instead": "A hand-rolled dispatcher: an ICommandHandler<TCommand,TResult> interface, DI registration by assembly scan, and a thin ISender that resolves and invokes. Keep the pipeline-behaviour concept if you use it." },
+        { "id": "AutoMapper", "since": "15.0", "reason": "Commercially licensed, and reflection-based mapping moves a field-name mismatch from compile time to runtime — the failure surfaces as a silently null property rather than a build error.", "instead": "Explicit mapping methods, or a source generator such as Mapperly which produces readable code you can step through." },
+        { "id": "FluentAssertions", "since": "8.0", "reason": "Relicensed commercially for most commercial use at v8.", "instead": "Stay on the last permissive version, or move to Shouldly, or use xUnit/TUnit assertions directly." },
+        { "id": "Newtonsoft.Json", "reason": "Not deprecated, but slower and unable to participate in source-generated or AOT-compatible serialization. Taking it in a new project forecloses Native AOT.", "instead": "System.Text.Json. Keep Newtonsoft only where a specific converter has no equivalent, and isolate it." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry via the OpenTelemetry.Extensions.Hosting packages, with ILogger structured logging and W3C trace context propagated by the default HttpClient handler.",
+        "health-and-readiness": "AddHealthChecks with tagged checks; map /health/live filtered to no dependencies and /health/ready to the tagged dependency set.",
+        "configuration": "IOptions<T> bound with .BindConfiguration(), .ValidateDataAnnotations() and .ValidateOnStart().",
+        "secrets-management": "User Secrets locally; a managed secret store injected as configuration in every deployed environment. Never appsettings.json.",
+        "authn-authz": "Authentication middleware plus authorization policies; RequireAuthorization() applied at the endpoint-group level so a new endpoint inherits protection by default.",
+        "input-validation": "FluentValidation or DataAnnotations executed in a dispatcher pipeline step before the handler runs.",
+        "error-contract": "ProblemDetails (RFC 9457) via AddProblemDetails and a global exception handler; the exception message never reaches the response body in a non-development environment.",
+        "resilience": "AddStandardResilienceHandler on every typed HttpClient — it supplies timeout, retry with jitter, and a circuit breaker together.",
+        "data-migrations": "EF Core migrations committed to source; applied by a deployment step or a dedicated migration job, never by the application at startup in production.",
+        "testing": "xUnit or TUnit for unit tests; WebApplicationFactory plus Testcontainers for integration tests against a real database engine.",
+        "supply-chain": "Central Package Management via Directory.Packages.props, a committed packages.lock.json, and dotnet list package --vulnerable in CI.",
+        "ci-gate": "dotnet build with warnings as errors, dotnet test, dotnet format --verify-no-changes, and a vulnerability scan, all required for merge.",
+        "api-contract": "OpenAPI generated from the endpoint signatures via the built-in Microsoft.AspNetCore.OpenApi, versioned with Asp.Versioning.",
+        "rollback": "Expand-then-contract migrations so the previous application version still runs against the new schema; document the data-repair step for anything the rolled-back version wrote."
+      },
+      "testing": { "unit": "xUnit or TUnit", "integration": "WebApplicationFactory + Testcontainers", "e2e": "Playwright against a deployed environment", "coverageFloor": 80 },
+      "notes": "The MediatR and AutoMapper entries are the two most likely to be argued with, because both were the default advice for a decade and both still appear in most tutorials. State the licence reason explicitly rather than presenting the hand-rolled dispatcher as if it were the conventional choice."
+    },
+
+    {
+      "id": "dotnet-library",
+      "name": ".NET shared library",
+      "appliesToStacks": ["dotnet-shared-lib"],
+      "runtime": { "name": ".NET", "minimum": "netstandard2.0 plus a current net10.0 target", "knownLatestAtAuthoring": "10.0", "channel": "LTS", "cadence": "One major each November.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "C#", "minimum": "14", "required": ["Nullable=enable", "TreatWarningsAsErrors=true", "GenerateDocumentationFile=true"] },
+      "architecture": {
+        "default": "Multi-targeted library with a deliberately small public surface. Everything not explicitly part of the contract is internal.",
+        "why": "A library's public surface is its irreversible decision — every exported type is a compatibility obligation. Multi-targeting lets consumers on older runtimes adopt it without forcing a framework upgrade, which is usually why a shared library fails to get adopted.",
+        "escalateTo": "Split into separate packages when one consumer needs a fraction of the library and is forced to take a heavy transitive dependency for the rest.",
+        "layers": ["Public contract (interfaces, options, exceptions)", "Internal implementation"]
+      },
+      "modernCapabilities": [
+        { "use": "Source generators for anything reflective", "insteadOf": "Runtime reflection", "since": "C# 9", "note": "Reflection in a library forecloses Native AOT for every consumer, not just for you." },
+        { "use": "Public API analyzers with committed .api.txt baselines", "insteadOf": "Reviewing surface changes by eye", "since": "Microsoft.CodeAnalysis.PublicApiAnalyzers" },
+        { "use": "Deterministic builds with SourceLink and a published symbol package", "insteadOf": "Shipping a binary consumers cannot step into", "since": ".NET 5" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Any dependency not strictly required", "reason": "A library's dependencies become every consumer's dependencies, and a version conflict between two libraries is unresolvable by the consumer.", "instead": "Depend on abstractions from Microsoft.Extensions.* where possible; take nothing that pins a major version of a widely used package." }
+      ],
+      "concernImplementations": {
+        "observability": "Accept an ILogger<T> or ILoggerFactory; never construct a logging pipeline inside a library. Expose an ActivitySource and an EventSource/Meter for consumers to subscribe to.",
+        "configuration": "An options class the consumer binds. A library that reads IConfiguration directly steals a decision from its host.",
+        "error-contract": "Purpose-built exception types deriving from a single library base exception, so a consumer can catch the library without catching everything.",
+        "testing": "xUnit or TUnit against every target framework in the multi-target set, not just the newest.",
+        "supply-chain": "Deterministic build, SourceLink, published .snupkg, and a generated SBOM attached to the release.",
+        "ci-gate": "Build, test across all targets, public-API baseline diff, and pack — all required for merge.",
+        "api-contract": "SemVer enforced by the public API analyzer; a major bump is required for any removal or signature change.",
+        "rollback": "Never unlist-and-replace a published version. Ship a new patch — consumers may already have restored the bad one.",
+        "secrets-management": "Not applicable — a library must never read a secret store directly; it receives credentials from its host.",
+        "health-and-readiness": "Not applicable to a library. Expose a diagnostic method the host can surface in its own health check.",
+        "authn-authz": "Not applicable — a library must not make authorization decisions on its host's behalf.",
+        "input-validation": "Validate public method arguments and throw ArgumentException early; a library cannot trust its caller.",
+        "resilience": "Expose timeout and retry as options rather than hardcoding them — the host owns its own failure policy.",
+        "data-migrations": "Not applicable unless the library owns schema, in which case it ships migrations the host chooses when to apply."
+      },
+      "testing": { "unit": "xUnit or TUnit across every target framework", "integration": "A consuming sample project built in CI", "coverageFloor": 85 }
+    },
+
+    {
+      "id": "angular",
+      "name": "Angular",
+      "appliesToStacks": ["angular"],
+      "runtime": { "name": "Angular", "minimum": "20", "knownLatestAtAuthoring": "20 as directed by the user; the release cadence means 21 or 22 may have shipped by the time you read this", "channel": "stable", "cadence": "Two majors a year, roughly May and November — this number rots faster than any other in this file. Read @angular/core in package.json and trust that over this entry.", "verifiedOn": "2026-05", "source": "user-directed" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true", "noUncheckedIndexedAccess=true", "strictTemplates=true"] },
+      "architecture": {
+        "default": "Standalone components throughout, signal-based state, lazy-loaded feature routes, and a thin typed data-access layer per feature. No NgModules in new code.",
+        "why": "Standalone components declare their own dependencies, so a component's imports list is its actual dependency graph rather than whatever its NgModule happened to pull in. Signals make change detection dependency-tracked rather than tree-walking, which is what makes zoneless viable and removes the OnPush-versus-default cognitive tax.",
+        "escalateTo": "Introduce a store library only when server state and client state genuinely diverge — optimistic updates, cross-route caching, undo. Signals plus a service cover more than most teams expect, and adding a second state mechanism alongside them is a decision, not a detail.",
+        "layers": ["Feature routes (lazy)", "Smart components (signal state, inject())", "Presentational components (signal inputs, OnPush or zoneless)", "Data access (typed HTTP, resource())", "Shared UI"]
+      },
+      "modernCapabilities": [
+        { "use": "signal(), computed(), effect(), linkedSignal()", "insteadOf": "BehaviorSubject plus async pipe for local component state", "since": "16, linkedSignal in 19" },
+        { "use": "input(), output(), model() and signal queries (viewChild, contentChild)", "insteadOf": "@Input()/@Output() decorators and @ViewChild", "since": "17.1 - 17.2", "note": "input.required<T>() moves a missing binding to a compile-time error under strictTemplates." },
+        { "use": "Built-in control flow @if / @for / @switch", "insteadOf": "*ngIf, *ngFor, *ngSwitch", "since": "17", "note": "@for requires track — it is not optional and it is the whole performance point." },
+        { "use": "@defer blocks", "insteadOf": "Manual dynamic import plus a loading flag", "since": "17" },
+        { "use": "inject()", "insteadOf": "Constructor parameter injection", "since": "14", "note": "Required for functional guards, interceptors, and resolvers, and it composes into reusable helper functions in a way constructor DI cannot." },
+        { "use": "Functional route guards and HTTP interceptors", "insteadOf": "Class-based CanActivate and HttpInterceptor", "since": "15 / 15" },
+        { "use": "provideHttpClient(withFetch(), withInterceptors([...]))", "insteadOf": "HttpClientModule", "since": "15" },
+        { "use": "resource() / rxResource() for async reads", "insteadOf": "Manual loading/error/data triple held in three separate fields", "since": "19", "note": "Check whether it is still flagged experimental in the version you actually read." },
+        { "use": "takeUntilDestroyed()", "insteadOf": "A manual destroy$ Subject and ngOnDestroy", "since": "16" },
+        { "use": "Zoneless change detection", "insteadOf": "zone.js", "since": "18 experimental, stabilising through 19-20", "note": "Verify the status in the installed version before enabling it. It requires that all state be signal-based." },
+        { "use": "NgOptimizedImage", "insteadOf": "A bare <img> for above-the-fold content", "since": "15" },
+        { "use": "SSR with hydration via provideClientHydration()", "insteadOf": "A client-only bundle where first paint matters", "since": "16" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "NgModule", "since": "19", "reason": "Standalone is the default from v19 and NgModules reintroduce the implicit dependency graph standalone components exist to remove.", "instead": "Standalone components with explicit imports; ApplicationConfig with providers for app-level wiring." },
+        { "id": "A global state library adopted by default", "reason": "Adopting a store before there is cross-feature shared state produces boilerplate proportional to the app with no corresponding benefit, and it is very hard to remove later.", "instead": "Signals plus a scoped service. Introduce NgRx SignalStore or similar only when the escalation trigger above is genuinely met, and record it as an ADR." },
+        { "id": "moment.js", "reason": "In maintenance mode by its own maintainers, and large.", "instead": "date-fns, Luxon, or the platform Temporal API where available." }
+      ],
+      "concernImplementations": {
+        "observability": "A global ErrorHandler reporting to the platform's telemetry sink, plus an HTTP interceptor that attaches and propagates the correlation id the backend expects.",
+        "health-and-readiness": "Not applicable to a browser bundle. The build must emit a version stamp the running app exposes, so a support report identifies the exact deployed build.",
+        "configuration": "A typed config object provided through an InjectionToken and populated at bootstrap. Never import environment.ts deep inside a component.",
+        "secrets-management": "There are no secrets in a browser bundle. Anything requiring a secret goes through a backend endpoint; treat every value shipped to the client as public.",
+        "authn-authz": "Functional guards on lazy routes with canMatch so the chunk is never fetched when unauthorised, plus an interceptor attaching the token. The client-side check is a UX affordance — the server enforces.",
+        "input-validation": "Typed reactive forms with validators; mirror the server's rules but never rely on the client's copy.",
+        "error-contract": "Parse the backend ProblemDetails shape into a typed error and render field-level messages from it rather than a generic toast.",
+        "resilience": "An interceptor applying timeout and retry with backoff to idempotent GETs only.",
+        "data-migrations": "Not applicable. Persisted client state in localStorage or IndexedDB needs a version key and a migration path, or a stale shape breaks the app after a deploy.",
+        "testing": "Vitest or Jest for units with the Angular testing harness; Playwright for end-to-end. Test signal state through the component's public surface rather than reading internals.",
+        "supply-chain": "Committed package-lock.json, npm audit or an equivalent in CI, and a build-time bundle-size budget in angular.json.",
+        "ci-gate": "ng build --configuration production, ng test, ng lint, tsc --noEmit under strict, and the bundle budget — all required for merge.",
+        "api-contract": "Client types generated from the backend's OpenAPI document, never hand-written and never allowed to drift.",
+        "rollback": "Immutable, content-hashed asset filenames so a rollback does not serve a stale index.html against new chunks."
+      },
+      "testing": { "unit": "Vitest or Jest with the Angular testing harness", "integration": "Component tests with a mocked HTTP layer", "e2e": "Playwright", "coverageFloor": 75 },
+      "notes": "The Angular version number here is the single most volatile value in this file. Always read @angular/core from package.json first and say which version you read — proposing an API the installed version does not have is worse than proposing nothing."
+    },
+
+    {
+      "id": "nextjs",
+      "name": "Next.js",
+      "appliesToStacks": ["nextjs"],
+      "runtime": { "name": "Next.js", "minimum": "15", "knownLatestAtAuthoring": "15", "channel": "stable", "cadence": "Roughly one major a year with frequent minors.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true", "noUncheckedIndexedAccess=true"] },
+      "architecture": {
+        "default": "App Router with React Server Components by default. Client components only where interactivity actually requires them, marked at the leaf rather than the top of the tree.",
+        "why": "Server components keep data fetching and secrets on the server and ship no JavaScript for the non-interactive majority of a page. Marking 'use client' at the top of a route pulls the entire subtree into the client bundle, which silently discards the benefit — hence the leaf rule.",
+        "escalateTo": "Move to a separate backend service when the API is consumed by something other than this web app, or when its scaling profile diverges from page rendering.",
+        "layers": ["app/ routes (server components)", "Server actions and route handlers", "Client components (leaf, interactive)", "Data access (server-only)", "UI primitives"]
+      },
+      "modernCapabilities": [
+        { "use": "Server components and server actions", "insteadOf": "useEffect fetching from a client component", "since": "13.4 / 14" },
+        { "use": "The server-only package on data-access modules", "insteadOf": "Trusting that a module is never imported by a client component", "since": "13", "note": "This turns an accidental secret leak into a build error." },
+        { "use": "Streaming with Suspense boundaries and loading.tsx", "insteadOf": "Blocking the whole route on the slowest query", "since": "13" },
+        { "use": "Typed routes and generateMetadata", "insteadOf": "String route literals and a static head", "since": "13.2" },
+        { "use": "next/image and next/font", "insteadOf": "Raw <img> and a webfont <link>", "since": "13", "note": "next/font removes the layout shift and the third-party request together." }
+      ],
+      "forbiddenDependencies": [
+        { "id": "A client-side data-fetching library used for server-renderable data", "reason": "Fetching on the client what the server could have rendered adds a round trip, a loading state, and a bundle, for nothing.", "instead": "Fetch in a server component. Keep SWR or TanStack Query for genuinely client-owned interactive state." },
+        { "id": "Pages Router for new routes", "reason": "It cannot express server components, so a new feature built there forecloses the model the rest of the app uses.", "instead": "App Router. Leave existing Pages routes in place — they interoperate — and migrate only with a recorded decision." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry through the instrumentation.ts hook, with structured server-side logging and a correlation id propagated into downstream calls.",
+        "health-and-readiness": "A route handler returning liveness, and a readiness handler that checks the database and any dependency the app cannot serve without.",
+        "configuration": "Environment variables parsed and validated with a schema at module load, so a missing variable fails the build rather than the request. Only NEXT_PUBLIC_ values reach the client.",
+        "secrets-management": "Server-only modules marked with the server-only package; secrets injected by the platform. Never a NEXT_PUBLIC_ prefix on a secret.",
+        "authn-authz": "Checked in middleware for coarse routing and re-verified in every server action — a server action is a public HTTP endpoint regardless of which component calls it.",
+        "input-validation": "A schema validator such as Zod at the top of every server action and route handler, before any other work.",
+        "error-contract": "error.tsx and not-found.tsx boundaries per route segment; a typed JSON error shape from route handlers, never a raw exception.",
+        "resilience": "AbortSignal.timeout on every outbound fetch, with retry limited to idempotent requests.",
+        "data-migrations": "Owned by the ORM (Prisma or Drizzle), committed, applied by a deploy step rather than at request time.",
+        "testing": "Vitest for units, Playwright for end-to-end including server-action paths.",
+        "supply-chain": "Committed lockfile, dependency scanning in CI, and a bundle-size check on the client payload.",
+        "ci-gate": "next build, tsc --noEmit, eslint, tests, and a dependency scan — all required for merge.",
+        "api-contract": "Route handlers documented via a generated OpenAPI document when consumed externally; server actions typed end to end and not treated as a public contract.",
+        "rollback": "Immutable deployments with instant revert; expand-then-contract on schema so the previous build still runs."
+      },
+      "testing": { "unit": "Vitest", "integration": "Route handler tests against a test database", "e2e": "Playwright", "coverageFloor": 75 }
+    },
+
+    {
+      "id": "react",
+      "name": "React (SPA)",
+      "appliesToStacks": ["react"],
+      "runtime": { "name": "React", "minimum": "19", "knownLatestAtAuthoring": "19", "channel": "stable", "cadence": "Majors are infrequent; minors regular.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true", "noUncheckedIndexedAccess=true"] },
+      "architecture": {
+        "default": "Vite build, feature-folder structure, a server-state library for anything fetched, and local state kept local. Routing with a type-safe router.",
+        "why": "The distinction that matters is server state versus client state: they have different lifecycles, and the standard failure is putting fetched data in a global client store, which then needs manual cache invalidation nobody maintains. Feature folders keep a change's blast radius visible in the tree.",
+        "escalateTo": "Move to a meta-framework when SEO, first-paint latency, or server-side data access starts driving the design. Retrofitting SSR onto a mature SPA is substantially harder than starting there.",
+        "layers": ["Routes", "Feature modules (components, hooks, data access)", "Shared UI primitives", "API client (generated types)"]
+      },
+      "modernCapabilities": [
+        { "use": "The React Compiler", "insteadOf": "Hand-placed useMemo, useCallback and React.memo", "since": "19", "note": "Verify it is stable in the installed version before removing existing memoisation." },
+        { "use": "use() for reading promises and context", "insteadOf": "A useEffect plus setState fetch triple", "since": "19" },
+        { "use": "Actions, useActionState and useOptimistic", "insteadOf": "Manual pending/error state around a form submit", "since": "19" },
+        { "use": "Error boundaries plus Suspense per route", "insteadOf": "A single global try/catch and one app-wide spinner", "since": "16 / 18" },
+        { "use": "A type-safe router with typed params and loaders", "insteadOf": "String paths and untyped useParams", "since": "TanStack Router, or React Router in its typed mode" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Redux as the default store", "reason": "Most of what teams reach for Redux to solve is server state, which a query library handles with caching and invalidation built in. Redux then holds a manually synchronised copy.", "instead": "TanStack Query for server state; useState or Zustand for genuinely client-owned state." },
+        { "id": "Create React App", "reason": "No longer maintained.", "instead": "Vite, or a meta-framework if the escalation trigger applies." },
+        { "id": "moment.js", "reason": "Maintenance mode and large.", "instead": "date-fns, Luxon, or Temporal." }
+      ],
+      "concernImplementations": {
+        "observability": "An error boundary reporting to the telemetry sink, plus a fetch wrapper propagating the correlation id.",
+        "health-and-readiness": "Not applicable to a browser bundle; emit a build version the app exposes for support.",
+        "configuration": "Build-time environment variables validated by a schema at startup, exposed as one typed object.",
+        "secrets-management": "None in the bundle. Everything requiring a secret goes through a backend.",
+        "authn-authz": "Route-level guards and a token-attaching fetch wrapper. Server enforcement is the real control.",
+        "input-validation": "React Hook Form with a Zod schema shared with the API types where possible.",
+        "error-contract": "Parse the backend error shape into a typed error; render field-level messages.",
+        "resilience": "Query-library retry with backoff for reads; never automatic retry on a non-idempotent mutation.",
+        "data-migrations": "Version any persisted client state and migrate it on read.",
+        "testing": "Vitest with Testing Library, queried by accessible role rather than test id; Playwright for end-to-end.",
+        "supply-chain": "Committed lockfile, dependency scanning, and a bundle-size budget enforced in CI.",
+        "ci-gate": "Build, tsc --noEmit, eslint, tests, and a dependency scan required for merge.",
+        "api-contract": "Client types generated from the backend OpenAPI document.",
+        "rollback": "Content-hashed assets and immutable deploys."
+      },
+      "testing": { "unit": "Vitest + Testing Library", "integration": "Mocked network at the boundary via MSW", "e2e": "Playwright", "coverageFloor": 75 }
+    },
+
+    {
+      "id": "vue",
+      "name": "Vue",
+      "appliesToStacks": ["vue"],
+      "runtime": { "name": "Vue", "minimum": "3.5", "knownLatestAtAuthoring": "3.5", "channel": "stable", "cadence": "Minors every few months.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true"] },
+      "architecture": {
+        "default": "Composition API with <script setup> throughout, Pinia for shared state, composables for reusable logic, and file-based or explicitly typed routing.",
+        "why": "<script setup> gives full type inference on props and emits with no boilerplate, which is what makes strict TypeScript practical in a Vue codebase. Composables express reuse as plain functions rather than mixins, so the origin of a binding is traceable.",
+        "escalateTo": "Move to Nuxt when SSR, SEO, or server-side data access becomes a requirement.",
+        "layers": ["Routes", "Feature components (<script setup>)", "Composables", "Pinia stores (client state)", "API layer"]
+      },
+      "modernCapabilities": [
+        { "use": "<script setup> with defineProps<T>() and defineEmits<T>()", "insteadOf": "The Options API and runtime prop declarations", "since": "3.2" },
+        { "use": "defineModel()", "insteadOf": "A modelValue prop plus a manual update:modelValue emit", "since": "3.4" },
+        { "use": "Pinia with setup stores", "insteadOf": "Vuex", "since": "Pinia is the official recommendation" },
+        { "use": "Suspense with async setup", "insteadOf": "A manual loading flag per component", "since": "3.0", "note": "Check its experimental status in the installed version." }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Vuex", "reason": "Superseded by Pinia, which is the official recommendation and has materially better TypeScript inference.", "instead": "Pinia." },
+        { "id": "The Options API in new components", "reason": "It cannot express the same type inference, and mixing both styles in one codebase means every reader checks which convention a file follows.", "instead": "Composition API with <script setup>." }
+      ],
+      "concernImplementations": {
+        "observability": "app.config.errorHandler reporting to the telemetry sink, plus correlation-id propagation in the HTTP layer.",
+        "health-and-readiness": "Not applicable to a browser bundle; expose a build version.",
+        "configuration": "Validated environment variables exposed as one typed object.",
+        "secrets-management": "None in the bundle.",
+        "authn-authz": "Router navigation guards plus a token-attaching HTTP layer; the server enforces.",
+        "input-validation": "VeeValidate or Zod schemas at the form boundary.",
+        "error-contract": "Typed parsing of the backend error shape.",
+        "resilience": "Timeout and idempotent-only retry in the HTTP layer.",
+        "data-migrations": "Version persisted client state.",
+        "testing": "Vitest with Vue Test Utils; Playwright for end-to-end.",
+        "supply-chain": "Committed lockfile, dependency scanning, bundle budget.",
+        "ci-gate": "Build, vue-tsc --noEmit, eslint, tests required for merge.",
+        "api-contract": "Generated client types from OpenAPI.",
+        "rollback": "Content-hashed assets and immutable deploys."
+      },
+      "testing": { "unit": "Vitest + Vue Test Utils", "e2e": "Playwright", "coverageFloor": 75 }
+    },
+
+    {
+      "id": "svelte",
+      "name": "Svelte / SvelteKit",
+      "appliesToStacks": ["svelte"],
+      "runtime": { "name": "Svelte", "minimum": "5", "knownLatestAtAuthoring": "5 with SvelteKit 2", "channel": "stable", "cadence": "Majors infrequent.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true"] },
+      "architecture": {
+        "default": "SvelteKit with runes for reactivity, load functions for data, and form actions for mutations. Server-side by default; client-side only where interaction requires it.",
+        "why": "Runes make reactivity explicit and traceable rather than compiler-inferred from assignment position, which is what made Svelte 4's reactivity surprising at scale. Load functions and form actions keep data access on the server and give progressive enhancement without extra work.",
+        "escalateTo": "Split out a standalone API service when consumers other than this app appear.",
+        "layers": ["Routes (+page, +layout)", "Server load and form actions", "Components (runes)", "Server-only data access ($lib/server)"]
+      },
+      "modernCapabilities": [
+        { "use": "$state, $derived, $effect, $props runes", "insteadOf": "let with implicit reactivity, $: labels, and export let", "since": "5" },
+        { "use": "Form actions with progressive enhancement", "insteadOf": "A client-side fetch handler on submit", "since": "SvelteKit 1" },
+        { "use": "$lib/server for data access", "insteadOf": "A shared module imported from both client and server", "since": "SvelteKit 1", "note": "SvelteKit makes importing it from client code a build error, which is the point." },
+        { "use": "Streamed promises from load", "insteadOf": "Awaiting the slowest query before rendering anything", "since": "SvelteKit 1" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Svelte 4 reactive syntax in new components", "reason": "Mixing runes and legacy reactivity in one codebase means every reader must determine which mode a file is in.", "instead": "Runes throughout." },
+        { "id": "A global store for server state", "reason": "Load functions already provide per-route data with SvelteKit's own invalidation.", "instead": "Load functions and invalidate(); keep stores for genuinely client-owned state." }
+      ],
+      "concernImplementations": {
+        "observability": "handleError hooks plus OpenTelemetry in the server hooks, with correlation-id propagation.",
+        "health-and-readiness": "A +server.ts endpoint for liveness and one checking dependencies for readiness.",
+        "configuration": "$env/static/private and $env/dynamic/private, schema-validated at startup; $env/static/public for anything client-visible.",
+        "secrets-management": "$env/*/private only, which SvelteKit prevents client code from importing.",
+        "authn-authz": "handle hook for session resolution; per-route checks in load and in every form action.",
+        "input-validation": "Zod at the top of every form action and API route.",
+        "error-contract": "+error.svelte boundaries and typed error() throws; never a raw exception to the client.",
+        "resilience": "AbortSignal.timeout on outbound fetch; idempotent-only retry.",
+        "data-migrations": "Owned by the ORM, committed, applied by a deploy step.",
+        "testing": "Vitest for units, Playwright for end-to-end.",
+        "supply-chain": "Committed lockfile, dependency scanning, bundle budget.",
+        "ci-gate": "Build, svelte-check, eslint, tests required for merge.",
+        "api-contract": "Generated OpenAPI where consumed externally.",
+        "rollback": "Immutable deploys; expand-then-contract on schema."
+      },
+      "testing": { "unit": "Vitest", "e2e": "Playwright", "coverageFloor": 75 }
+    },
+
+    {
+      "id": "node-typescript",
+      "name": "Node.js + TypeScript service",
+      "appliesToStacks": ["node-typescript"],
+      "runtime": { "name": "Node.js", "minimum": "22 LTS", "knownLatestAtAuthoring": "24 LTS", "channel": "LTS", "cadence": "A new major each April and October; even majors become LTS that October.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "TypeScript", "minimum": "5.4", "required": ["strict=true", "noUncheckedIndexedAccess=true", "module=NodeNext", "verbatimModuleSyntax=true", "isolatedModules=true"] },
+      "architecture": {
+        "default": "ESM-only, layered service with the HTTP framework confined to a thin adapter at the edge. Domain logic imports nothing from the framework.",
+        "why": "Keeping the framework at the edge is what makes the domain testable without booting an HTTP server, and it is what makes a framework migration a bounded change rather than a rewrite. ESM-only avoids the dual-package hazard, where a dependency loaded twice under two module systems produces two copies of what should be one singleton.",
+        "escalateTo": "Split a service out when it needs independent scaling and owns its own data. A shared database between two services is a distributed monolith with extra latency.",
+        "layers": ["HTTP adapter (routes, serialization)", "Application services", "Domain", "Infrastructure (persistence, outbound clients)"]
+      },
+      "modernCapabilities": [
+        { "use": "node: prefixed builtin imports", "insteadOf": "Bare 'fs' or 'path' specifiers", "since": "16", "note": "Unambiguous, and it prevents a malicious package shadowing a builtin." },
+        { "use": "The built-in node:test runner, or Vitest", "insteadOf": "Adding a heavy test framework to a service", "since": "20 stable" },
+        { "use": "AbortSignal and AbortSignal.timeout on every async boundary", "insteadOf": "An unbounded await", "since": "18" },
+        { "use": "Native fetch", "insteadOf": "axios or node-fetch for simple calls", "since": "18" },
+        { "use": "structuredClone and the Web Crypto API", "insteadOf": "A deep-clone dependency and a hand-rolled crypto helper", "since": "17 / 19" },
+        { "use": "The permission model and --env-file where appropriate", "insteadOf": "dotenv plus unrestricted filesystem access", "since": "20", "note": "Check the stability status in the installed version." },
+        { "use": "Type-stripping execution of TypeScript where the runtime supports it", "insteadOf": "ts-node in production", "since": "22", "note": "It strips types; it does not type-check. Keep tsc --noEmit in CI regardless." }
+      ],
+      "forbiddenDependencies": [
+        { "id": "CommonJS for new services", "reason": "It forecloses top-level await and creates the dual-package hazard as the ecosystem completes its ESM migration.", "instead": "ESM with module NodeNext." },
+        { "id": "moment.js", "reason": "Maintenance mode and large.", "instead": "date-fns, Luxon, or Temporal." },
+        { "id": "request", "reason": "Deprecated for years.", "instead": "Native fetch, or undici for connection-pool control." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry auto-instrumentation loaded before the app, plus Pino structured logging with the trace id in every line.",
+        "health-and-readiness": "Distinct /health/live and /health/ready routes, readiness checking real dependencies.",
+        "configuration": "A Zod schema parsed once at startup into a frozen typed object; the process exits non-zero on a validation failure.",
+        "secrets-management": "Injected environment or a secret-store client. No .env file in any deployed environment.",
+        "authn-authz": "Framework-level auth applied at the route-group level so new routes inherit it; deny by default.",
+        "input-validation": "Zod or TypeBox at the route boundary, producing typed handler input.",
+        "error-contract": "RFC 9457 problem+json from a single error-serialising middleware; the stack trace never leaves the process.",
+        "resilience": "undici with explicit timeouts, plus a circuit breaker on every outbound dependency.",
+        "data-migrations": "Prisma, Drizzle, or node-pg-migrate; committed and applied by a deploy step.",
+        "testing": "node:test or Vitest for units; Testcontainers for integration against real dependencies.",
+        "supply-chain": "Committed lockfile, npm audit or Socket in CI, and an SBOM on release.",
+        "ci-gate": "tsc --noEmit, eslint, tests, and a dependency scan required for merge.",
+        "api-contract": "OpenAPI generated from the route schemas — the same schemas used for validation, so they cannot drift.",
+        "rollback": "Immutable container tags, never a moving 'latest'; expand-then-contract on schema."
+      },
+      "testing": { "unit": "node:test or Vitest", "integration": "Testcontainers", "e2e": "Supertest or Playwright API tests", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "spring-boot",
+      "name": "Spring Boot (Java)",
+      "appliesToStacks": ["spring-boot"],
+      "runtime": { "name": "Java", "minimum": "21 LTS", "knownLatestAtAuthoring": "25 LTS, with Spring Boot 3.4/3.5", "channel": "LTS", "cadence": "A release every six months; an LTS every two years.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Java", "minimum": "21", "required": ["-Werror on new modules", "-parameters"] },
+      "architecture": {
+        "default": "Modular monolith with package-by-feature, constructor injection throughout, and Spring Modulith to make module boundaries verifiable rather than aspirational.",
+        "why": "Package-by-feature keeps a change inside one package; package-by-layer spreads every feature across four. Spring Modulith turns a module boundary into a test that fails on violation, which is the only kind of boundary that survives delivery pressure.",
+        "escalateTo": "Extract a module into a service when it needs independent scaling or deploy cadence and owns its data. Modulith's verified boundaries make that extraction mechanical rather than archaeological.",
+        "layers": ["Web (controllers, DTOs)", "Application (services, transactions)", "Domain (entities, invariants)", "Infrastructure (repositories, clients)"]
+      },
+      "modernCapabilities": [
+        { "use": "Records for DTOs and value objects", "insteadOf": "Lombok @Data classes", "since": "Java 16", "note": "This removes the main reason most projects took Lombok at all." },
+        { "use": "Sealed interfaces with pattern-matching switch", "insteadOf": "Visitor patterns or instanceof chains", "since": "Java 21", "note": "Exhaustiveness is checked by the compiler, so a new variant becomes a build error." },
+        { "use": "Virtual threads", "insteadOf": "A tuned platform-thread pool for blocking I/O", "since": "Java 21", "note": "Verify no synchronized block pins a carrier thread on a hot path." },
+        { "use": "Constructor injection", "insteadOf": "@Autowired on fields", "since": "always", "note": "Field injection hides required dependencies from the constructor and defeats immutability." },
+        { "use": "RestClient", "insteadOf": "RestTemplate", "since": "Spring Framework 6.1" },
+        { "use": "@ConfigurationProperties with @Validated", "insteadOf": "@Value on individual fields", "since": "always" },
+        { "use": "Testcontainers with @ServiceConnection", "insteadOf": "An in-memory database standing in for the real engine", "since": "Spring Boot 3.1" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Field injection via @Autowired", "reason": "Hides dependencies, prevents final fields, and makes the class untestable without a container.", "instead": "Constructor injection — Spring does it implicitly for a single constructor." },
+        { "id": "An in-memory database used as a stand-in for production", "reason": "Dialect differences mean the tests pass and production fails, and the divergence is discovered late.", "instead": "Testcontainers running the real engine." },
+        { "id": "Lombok on new code", "reason": "Records and modern Java cover most of what it was adopted for, and it is a compile-time agent that complicates tooling.", "instead": "Records, and explicit code where a record does not fit." }
+      ],
+      "concernImplementations": {
+        "observability": "Micrometer Tracing with an OTLP exporter, structured JSON logging carrying trace and span ids.",
+        "health-and-readiness": "Spring Boot Actuator with the liveness and readiness probe groups enabled.",
+        "configuration": "@ConfigurationProperties with @Validated and fail-fast startup.",
+        "secrets-management": "A secret-store backend for the property sources; never a committed application.yml value.",
+        "authn-authz": "Spring Security with method-level annotations and a deny-by-default filter chain.",
+        "input-validation": "Jakarta Bean Validation on request records, with a @ControllerAdvice translating violations.",
+        "error-contract": "ProblemDetail (RFC 9457) from a @ControllerAdvice.",
+        "resilience": "Resilience4j for timeout, retry with jitter, bulkhead, and circuit breaker.",
+        "data-migrations": "Flyway or Liquibase, committed, applied by a deploy step.",
+        "testing": "JUnit 5 for units; @SpringBootTest with Testcontainers for integration.",
+        "supply-chain": "A dependency lock or BOM-pinned versions, OWASP dependency-check in CI, and a CycloneDX SBOM.",
+        "ci-gate": "Build, test, Checkstyle or Spotless, and a dependency scan required for merge.",
+        "api-contract": "springdoc-openapi generated from the controllers, versioned.",
+        "rollback": "Expand-then-contract migrations; immutable image tags."
+      },
+      "testing": { "unit": "JUnit 5", "integration": "@SpringBootTest + Testcontainers", "e2e": "REST Assured or Playwright", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "kotlin-spring",
+      "name": "Spring Boot (Kotlin)",
+      "appliesToStacks": ["kotlin-spring"],
+      "runtime": { "name": "Kotlin on the JVM", "minimum": "2.0", "knownLatestAtAuthoring": "2.1 on Java 21+, Spring Boot 3.4/3.5", "channel": "stable", "cadence": "Kotlin minors a few times a year.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Kotlin", "minimum": "2.0", "required": ["explicitApi for libraries", "-Xjsr305=strict", "allWarningsAsErrors on new modules"] },
+      "architecture": {
+        "default": "Modular monolith, package-by-feature, constructor injection, coroutines for asynchrony, and data classes for DTOs.",
+        "why": "Kotlin's null safety removes an entire defect class at the type level, but only if the boundary to Java-based Spring APIs is strict — hence the JSR-305 setting. Coroutines give structured concurrency, so a cancelled request actually cancels the work it started rather than leaking it.",
+        "escalateTo": "Extract a service on independent scaling plus data ownership, as with the Java baseline.",
+        "layers": ["Web (controllers, DTOs)", "Application (services)", "Domain", "Infrastructure"]
+      },
+      "modernCapabilities": [
+        { "use": "Coroutines with structured concurrency and suspending controllers", "insteadOf": "Blocking calls on a platform thread pool", "since": "Kotlin 1.3", "note": "Cancellation propagates, which is the part that matters under load." },
+        { "use": "Data classes and sealed interfaces with exhaustive when", "insteadOf": "Java-style POJOs and instanceof chains", "since": "Kotlin 1.0 / 1.5" },
+        { "use": "Result or a sealed error type for expected failures", "insteadOf": "Exceptions for control flow", "since": "always" },
+        { "use": "kotlinx.serialization", "insteadOf": "Jackson with reflection where AOT or startup time matters", "since": "1.0" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Platform types crossing into domain code unchecked", "reason": "A Java-returned value typed as a platform type bypasses null checking, so the null-safety guarantee stops at the boundary and fails somewhere else.", "instead": "-Xjsr305=strict and explicit nullable types at every Java boundary." },
+        { "id": "Field injection with lateinit var", "reason": "It reintroduces the mutable, container-dependent construction that constructor injection removes.", "instead": "Constructor injection with val." }
+      ],
+      "concernImplementations": {
+        "observability": "Micrometer Tracing with OTLP export and structured logging.",
+        "health-and-readiness": "Actuator probe groups.",
+        "configuration": "@ConfigurationProperties on a data class with @Validated.",
+        "secrets-management": "Secret-store-backed property source.",
+        "authn-authz": "Spring Security, deny by default.",
+        "input-validation": "Jakarta Bean Validation on request data classes.",
+        "error-contract": "ProblemDetail via @ControllerAdvice.",
+        "resilience": "Resilience4j with coroutine support.",
+        "data-migrations": "Flyway or Liquibase, committed.",
+        "testing": "Kotest or JUnit 5, plus Testcontainers.",
+        "supply-chain": "Pinned versions, dependency-check in CI, CycloneDX SBOM.",
+        "ci-gate": "Build, test, ktlint, and a dependency scan required for merge.",
+        "api-contract": "springdoc-openapi, versioned.",
+        "rollback": "Expand-then-contract migrations; immutable image tags."
+      },
+      "testing": { "unit": "Kotest or JUnit 5", "integration": "@SpringBootTest + Testcontainers", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "django",
+      "name": "Django",
+      "appliesToStacks": ["django"],
+      "runtime": { "name": "Django", "minimum": "5.2 LTS", "knownLatestAtAuthoring": "5.2 LTS on Python 3.12+", "channel": "LTS", "cadence": "A feature release roughly every eight months; an LTS every two years.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Python", "minimum": "3.12", "required": ["Full type annotations on new code", "mypy or pyright in strict mode"] },
+      "architecture": {
+        "default": "App-per-bounded-context with a service layer between views and models, Django REST Framework or Ninja for APIs, and business logic kept out of both views and model save() overrides.",
+        "why": "Logic in save() runs on every write path including bulk operations and admin actions, which is how a rule ends up applied inconsistently. A service layer gives one place a rule can be read and tested. Thin views keep the HTTP concern separable from the domain.",
+        "escalateTo": "Extract a service when an app needs independent scaling and owns its tables. Django's app boundary is a good seam if the service layer has been kept honest.",
+        "layers": ["URLs and views (thin)", "Serializers or schemas", "Services (business logic)", "Models and managers", "Tasks (async work)"]
+      },
+      "modernCapabilities": [
+        { "use": "Async views and async ORM operations", "insteadOf": "Blocking I/O in a request thread", "since": "Django 4.1", "note": "Verify the specific ORM operation has an async variant before assuming it." },
+        { "use": "Database-level constraints via CheckConstraint and UniqueConstraint", "insteadOf": "Validation only in a form or serializer", "since": "Django 2.2", "note": "Application-level validation cannot survive a bulk update or a direct SQL write." },
+        { "use": "select_related and prefetch_related on every list view", "insteadOf": "Lazy attribute access inside a loop", "since": "always", "note": "The N+1 query is the single most common Django performance defect." },
+        { "use": "Type annotations with django-stubs", "insteadOf": "Untyped model and queryset code", "since": "always" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Business logic in a model save() override", "reason": "It does not run on bulk operations or raw queries, so the rule is enforced inconsistently and the exception is discovered in production data.", "instead": "A service function that owns the write path, plus a database constraint for anything that must always hold." },
+        { "id": "DEBUG=True reachable in any deployed configuration", "reason": "It exposes the full traceback, settings, and SQL to any visitor.", "instead": "Environment-driven settings with a deployed default of False and a startup assertion." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry Django instrumentation plus structlog JSON logging carrying the trace id.",
+        "health-and-readiness": "A liveness view and a readiness view checking the database and cache.",
+        "configuration": "django-environ or Pydantic Settings, validated at import, with no working default for any secret.",
+        "secrets-management": "Environment or a secret-store client; SECRET_KEY never committed.",
+        "authn-authz": "Django's permission framework with deny-by-default DRF permission classes set globally.",
+        "input-validation": "DRF serializers or Ninja Pydantic schemas at the boundary.",
+        "error-contract": "A custom exception handler emitting a consistent typed JSON error; DEBUG always False when deployed.",
+        "resilience": "Explicit timeouts on every outbound requests/httpx call; Celery retries with backoff for async work.",
+        "data-migrations": "Django migrations committed and reviewed; data migrations kept separate from schema migrations and made reversible.",
+        "testing": "pytest-django with factory_boy; Testcontainers or a real database service in CI, never SQLite standing in for PostgreSQL.",
+        "supply-chain": "uv or pip-tools with a committed lock, pip-audit in CI, and an SBOM.",
+        "ci-gate": "ruff check, ruff format --check, mypy or pyright, pytest, and pip-audit required for merge.",
+        "api-contract": "drf-spectacular or Ninja's generated OpenAPI, versioned.",
+        "rollback": "Reversible migrations; expand-then-contract for anything a running previous version reads."
+      },
+      "testing": { "unit": "pytest", "integration": "pytest-django against a real database engine", "e2e": "Playwright", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "fastapi",
+      "name": "FastAPI",
+      "appliesToStacks": ["fastapi"],
+      "runtime": { "name": "FastAPI", "minimum": "0.115", "knownLatestAtAuthoring": "0.115 with Pydantic v2 on Python 3.12+", "channel": "stable", "cadence": "Frequent minor releases; still pre-1.0, so pin it.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Python", "minimum": "3.12", "required": ["Full type annotations", "mypy or pyright in strict mode"] },
+      "architecture": {
+        "default": "Async-first layered service: routers at the edge, a service layer for logic, repositories for persistence, and Pydantic v2 models as the boundary contract. Dependency injection through Depends.",
+        "why": "FastAPI derives validation, serialization, and the OpenAPI document from the same type annotations, so the contract cannot drift from the code — but only if the annotated models are the real boundary rather than a decorative layer over dicts. Async-first matters because one blocking call inside an async endpoint stalls the whole event loop.",
+        "escalateTo": "Extract a service on independent scaling plus data ownership.",
+        "layers": ["Routers", "Schemas (Pydantic v2)", "Services", "Repositories", "Domain"]
+      },
+      "modernCapabilities": [
+        { "use": "Pydantic v2 models with strict types and field validators", "insteadOf": "Manual dict validation or Pydantic v1 idioms", "since": "Pydantic 2.0", "note": "The v2 core is Rust-backed and materially faster; v1 validators do not carry over unchanged." },
+        { "use": "Annotated[...] dependencies", "insteadOf": "Default-argument Depends()", "since": "FastAPI 0.95", "note": "The dependency becomes reusable as a named type alias." },
+        { "use": "The lifespan context manager", "insteadOf": "@app.on_event startup and shutdown hooks", "since": "FastAPI 0.93", "note": "The event hooks are deprecated." },
+        { "use": "async SQLAlchemy 2.0 style with an async session", "insteadOf": "Blocking ORM calls inside an async endpoint", "since": "SQLAlchemy 2.0", "note": "One blocking call stalls the event loop for every concurrent request, not just its own." },
+        { "use": "httpx.AsyncClient with an explicit timeout", "insteadOf": "requests inside async code", "since": "always" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Blocking I/O inside an async def endpoint", "reason": "It blocks the event loop for every concurrent request. The symptom is a service that is fast in testing and collapses under load, which is the hardest failure to attribute.", "instead": "An async driver, or run_in_threadpool for genuinely blocking libraries." },
+        { "id": "Pydantic v1", "reason": "Superseded; v2 is substantially faster and is what current FastAPI targets.", "instead": "Pydantic v2." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry FastAPI instrumentation plus structlog JSON logging with the trace id.",
+        "health-and-readiness": "/health/live and /health/ready routes, readiness checking the database and any hard dependency.",
+        "configuration": "Pydantic Settings validated at startup; the process exits non-zero on a missing required value.",
+        "secrets-management": "Environment or a secret-store client, never a committed .env.",
+        "authn-authz": "A security dependency applied at the router level so a new route inherits it; deny by default.",
+        "input-validation": "Pydantic v2 schemas — the same models that generate the OpenAPI document.",
+        "error-contract": "RFC 9457 problem+json from a global exception handler; internal messages never reach the client.",
+        "resilience": "httpx with explicit timeouts plus a circuit breaker on outbound dependencies.",
+        "data-migrations": "Alembic, committed, applied by a deploy step.",
+        "testing": "pytest with httpx.AsyncClient and ASGITransport; Testcontainers for the real database.",
+        "supply-chain": "uv with a committed lock, pip-audit in CI, and an SBOM.",
+        "ci-gate": "ruff check, ruff format --check, mypy or pyright strict, pytest, and pip-audit required for merge.",
+        "api-contract": "The OpenAPI document FastAPI generates from the annotations, versioned and published.",
+        "rollback": "Reversible Alembic migrations; immutable image tags."
+      },
+      "testing": { "unit": "pytest", "integration": "pytest + Testcontainers", "e2e": "pytest against a deployed environment", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "go",
+      "name": "Go",
+      "appliesToStacks": ["go"],
+      "runtime": { "name": "Go", "minimum": "1.22", "knownLatestAtAuthoring": "1.24", "channel": "stable", "cadence": "Two releases a year, February and August; the compatibility promise makes upgrading low-risk.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Go", "minimum": "1.22", "required": ["go vet clean", "staticcheck or golangci-lint clean"] },
+      "architecture": {
+        "default": "Standard layout with cmd/ and internal/, dependencies passed explicitly as interfaces defined by the consumer, and context.Context threaded through every call that can block.",
+        "why": "Defining an interface where it is consumed rather than where it is implemented keeps packages independently testable and avoids the dependency inversion that a shared interfaces package quietly creates. internal/ is enforced by the compiler, so a module boundary is real rather than documented.",
+        "escalateTo": "Split a binary out when it needs independent deployment; Go's build model makes multiple binaries in one module cheap, so this is a smaller step than in most stacks.",
+        "layers": ["cmd/<binary>", "internal/<domain>", "internal/platform (adapters)", "pkg/ only for genuinely external consumers"]
+      },
+      "modernCapabilities": [
+        { "use": "log/slog structured logging", "insteadOf": "The standard log package or a third-party logger", "since": "1.21" },
+        { "use": "errors.Is, errors.As and %w wrapping", "insteadOf": "String comparison on error text", "since": "1.13" },
+        { "use": "Enhanced net/http routing with method and wildcard patterns", "insteadOf": "Taking a router dependency for simple routing", "since": "1.22" },
+        { "use": "context.Context on every blocking call, with a deadline", "insteadOf": "An unbounded call", "since": "always" },
+        { "use": "Generics for genuinely type-parametric utilities", "insteadOf": "interface{} plus a type assertion", "since": "1.18", "note": "Not everywhere — a concrete type is clearer where it fits." },
+        { "use": "testing.T.Cleanup and t.Context", "insteadOf": "defer-based teardown that skips on a fatal failure", "since": "1.14 / 1.24" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "panic for expected failures", "reason": "It crosses package boundaries invisibly and turns a handled condition into a process-level event.", "instead": "An error return; reserve panic for genuinely unrecoverable programmer error." },
+        { "id": "A global mutable package-level variable holding a dependency", "reason": "It makes tests order-dependent and hides the dependency from every signature that uses it.", "instead": "Explicit construction and injection through the constructor." }
+      ],
+      "concernImplementations": {
+        "observability": "OpenTelemetry Go SDK with otelhttp instrumentation, plus slog with the trace id in the handler's context.",
+        "health-and-readiness": "Separate /health/live and /health/ready handlers.",
+        "configuration": "A struct populated from the environment and validated at startup; exit non-zero on failure.",
+        "secrets-management": "Environment or a secret-store client; nothing committed.",
+        "authn-authz": "Middleware applied at the mux level, deny by default.",
+        "input-validation": "Explicit decode-and-validate at the handler boundary into a typed struct.",
+        "error-contract": "A single error-rendering helper emitting RFC 9457 problem+json; the internal error never reaches the body.",
+        "resilience": "context deadlines on every outbound call, a tuned http.Transport, and a circuit breaker for dependencies.",
+        "data-migrations": "goose or golang-migrate, committed, applied by a deploy step.",
+        "testing": "The standard testing package with table-driven tests; Testcontainers for integration.",
+        "supply-chain": "go.sum committed, govulncheck in CI, and an SBOM on release.",
+        "ci-gate": "go build, go vet, golangci-lint, go test -race, and govulncheck required for merge.",
+        "api-contract": "OpenAPI generated or hand-maintained and diffed in CI; versioned.",
+        "rollback": "Immutable image tags; expand-then-contract migrations."
+      },
+      "testing": { "unit": "testing, table-driven", "integration": "Testcontainers", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "rust",
+      "name": "Rust",
+      "appliesToStacks": ["rust"],
+      "runtime": { "name": "Rust", "minimum": "1.80 with edition 2021", "knownLatestAtAuthoring": "1.85+ with edition 2024 available", "channel": "stable", "cadence": "A release every six weeks; an edition roughly every three years.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "language": { "name": "Rust", "minimum": "1.80", "required": ["#![deny(unsafe_code)] unless justified", "clippy::pedantic considered", "A committed rust-toolchain.toml"] },
+      "architecture": {
+        "default": "Cargo workspace with crates split on the domain boundary, errors modelled with thiserror in libraries and anyhow at the binary edge, and async runtime confined to the edge where it is needed.",
+        "why": "A library returning anyhow::Error forces every consumer to give up on matching specific failures, so the distinction between thiserror and anyhow is a contract decision rather than a style preference. Confining async to the edge keeps domain logic testable without a runtime.",
+        "escalateTo": "Split a crate out of the workspace when it becomes independently publishable and versioned.",
+        "layers": ["Binary crate (wiring, config)", "Domain crates (no I/O)", "Adapter crates (persistence, HTTP)"]
+      },
+      "modernCapabilities": [
+        { "use": "thiserror in libraries, anyhow at the binary edge", "insteadOf": "Box<dyn Error> everywhere", "since": "always", "note": "This is what lets a caller match on a specific failure instead of stringifying it." },
+        { "use": "async fn in traits", "insteadOf": "The async-trait macro and its boxing overhead", "since": "1.75", "note": "Check the object-safety constraints for your use before removing async-trait." },
+        { "use": "let-else for early returns", "insteadOf": "Deeply nested if-let pyramids", "since": "1.65" },
+        { "use": "The tracing crate with structured spans", "insteadOf": "println or the log crate for a service", "since": "always" },
+        { "use": "cargo-deny for licence and advisory policy", "insteadOf": "Reviewing dependency licences by hand", "since": "always" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "unwrap and expect on a path that can fail at runtime", "reason": "It converts a handleable error into a process abort, and in a service that means dropping every in-flight request.", "instead": "Propagate with ?; reserve expect for genuine invariants and give it a message explaining why it cannot fail." },
+        { "id": "unsafe without a documented safety comment", "reason": "Unsafe code without a stated invariant cannot be reviewed or maintained, and it voids the guarantee that motivates the language choice.", "instead": "A safe abstraction, or unsafe with a SAFETY comment stating the invariant and why it holds." },
+        { "id": "Blocking I/O inside an async task", "reason": "It stalls the executor thread and starves every other task scheduled on it.", "instead": "An async equivalent, or spawn_blocking." }
+      ],
+      "concernImplementations": {
+        "observability": "tracing with tracing-subscriber JSON output and the OpenTelemetry layer.",
+        "health-and-readiness": "Separate liveness and readiness routes on the HTTP surface.",
+        "configuration": "A serde struct populated from the environment or a config file, validated at startup.",
+        "secrets-management": "Environment or a secret-store client; wrap secret values in a type whose Debug implementation redacts them.",
+        "authn-authz": "Tower middleware layered at the router level, deny by default.",
+        "input-validation": "serde deserialization into a typed struct plus explicit validation; make invalid states unrepresentable where the type system allows.",
+        "error-contract": "An IntoResponse implementation mapping the error enum to RFC 9457 problem+json.",
+        "resilience": "tower with timeout, retry, and a circuit-breaker layer.",
+        "data-migrations": "sqlx migrations or refinery, committed, applied by a deploy step.",
+        "testing": "Built-in #[cfg(test)] units; Testcontainers for integration; proptest where the input space is large.",
+        "supply-chain": "Cargo.lock committed, cargo-audit and cargo-deny in CI, and an SBOM on release.",
+        "ci-gate": "cargo build, cargo clippy -- -D warnings, cargo fmt --check, cargo test, and cargo audit required for merge.",
+        "api-contract": "utoipa or an equivalent generating OpenAPI from the handlers.",
+        "rollback": "Immutable image tags; expand-then-contract migrations."
+      },
+      "testing": { "unit": "#[cfg(test)] modules", "integration": "tests/ with Testcontainers", "coverageFloor": 80 }
+    },
+
+    {
+      "id": "terraform",
+      "name": "Terraform / OpenTofu",
+      "appliesToStacks": ["terraform"],
+      "runtime": { "name": "Terraform or OpenTofu", "minimum": "1.9", "knownLatestAtAuthoring": "1.10+", "channel": "stable", "cadence": "Frequent minors. Note the licence change that produced OpenTofu — confirm which of the two this project actually uses before quoting a version.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "architecture": {
+        "default": "Composable modules with a thin root per environment, remote state with locking, and versions pinned for both the CLI and every provider.",
+        "why": "Unpinned providers mean the plan you reviewed and the plan that applies can differ, which defeats the purpose of reviewing a plan at all. State without locking allows two concurrent applies to corrupt it, and that failure is discovered by finding resources nobody can account for.",
+        "escalateTo": "Split state when a single apply grows slow enough that people start avoiding it, or when blast radius needs to be bounded by environment or domain.",
+        "layers": ["modules/ (reusable, versioned)", "environments/<env>/ (thin roots)", "Shared remote state backend"]
+      },
+      "modernCapabilities": [
+        { "use": "moved blocks for refactoring", "insteadOf": "terraform state mv run by hand", "since": "1.1", "note": "It is reviewable in the diff and reproducible in every environment." },
+        { "use": "Preconditions and postconditions in lifecycle blocks", "insteadOf": "Discovering an invalid combination at apply time", "since": "1.2" },
+        { "use": "Optional object attributes with defaults", "insteadOf": "A separate variable per optional field", "since": "1.3" },
+        { "use": "import blocks", "insteadOf": "terraform import run by hand", "since": "1.5" },
+        { "use": "A committed .terraform.lock.hcl", "insteadOf": "Provider resolution at apply time", "since": "0.14" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "Local state for anything shared", "reason": "No locking and no durability — two applies race, and the state file lives on one laptop.", "instead": "A remote backend with state locking and versioning enabled." },
+        { "id": "Unpinned provider versions", "reason": "A provider minor release can change plan output, so the reviewed plan is not the applied plan.", "instead": "Pinned versions plus a committed lock file." },
+        { "id": "Secrets in .tf or .tfvars files", "reason": "They are committed, and they also land in plaintext inside the state file.", "instead": "A secret store read at apply time, with the state backend encrypted at rest regardless." }
+      ],
+      "concernImplementations": {
+        "observability": "Tag every resource with owner, environment, and cost centre; ship apply logs to the central sink.",
+        "health-and-readiness": "Not applicable directly. The infrastructure must provision the health endpoints the workloads expose.",
+        "configuration": "Typed variables with validation blocks and explicit descriptions; no untyped any.",
+        "secrets-management": "A secret store read at apply time; state encrypted at rest and access-controlled, since state contains resolved secret values.",
+        "authn-authz": "Least-privilege execution role for the pipeline; no long-lived static credentials.",
+        "input-validation": "variable validation blocks plus preconditions.",
+        "error-contract": "Not applicable.",
+        "resilience": "Explicit dependencies and lifecycle rules; prevent_destroy on stateful resources.",
+        "data-migrations": "moved and import blocks committed rather than run as ad-hoc state surgery.",
+        "testing": "terraform validate, tflint, and a plan reviewed in CI. Terratest or the native test framework for modules.",
+        "supply-chain": "Committed lock file, pinned module sources by version or commit — never a floating branch.",
+        "ci-gate": "fmt check, validate, tflint, a security scan such as tfsec or Checkov, and a plan posted for review before any apply.",
+        "api-contract": "Module inputs and outputs documented with terraform-docs, generated in CI.",
+        "rollback": "Infrastructure rollback is not automatic. Keep state versioned, and document the recovery path for every stateful resource before creating it."
+      },
+      "notes": "stack-mappings.json already lists terraform apply and terraform destroy as forbiddenCommands enforced by the destructive gate. This baseline does not relax that: an agent proposes a plan, a human applies it."
+    },
+
+    {
+      "id": "kubernetes",
+      "name": "Kubernetes manifests",
+      "appliesToStacks": ["kubernetes"],
+      "runtime": { "name": "Kubernetes", "minimum": "1.29", "knownLatestAtAuthoring": "1.32+", "channel": "stable", "cadence": "Three releases a year; roughly a one-year support window per minor, so this rots quickly.", "verifiedOn": "2026-05", "source": "model-recall" },
+      "architecture": {
+        "default": "Kustomize bases with per-environment overlays, or a Helm chart with per-environment values. Every workload declares resource requests and limits, probes, and a non-root security context.",
+        "why": "A workload without resource requests is unschedulable in any predictable way and will be the first thing evicted under pressure. Overlays keep the environment difference visible as a small diff instead of three near-identical copies that drift apart.",
+        "escalateTo": "Adopt a GitOps controller when manual kubectl application becomes the audit gap — at that point the cluster's actual state is no longer derivable from the repository.",
+        "layers": ["base/ (workload, service, config)", "overlays/<env>/", "Policy (network policies, resource quotas)"]
+      },
+      "modernCapabilities": [
+        { "use": "Liveness, readiness, and startup probes distinctly configured", "insteadOf": "One probe reused for all three", "since": "1.16", "note": "A startup probe is what stops a slow-booting container being killed before it is ready." },
+        { "use": "Pod Security Admission and a restricted security context", "insteadOf": "The removed PodSecurityPolicy", "since": "1.25" },
+        { "use": "topologySpreadConstraints and a PodDisruptionBudget", "insteadOf": "Assuming the scheduler will spread replicas", "since": "1.19" },
+        { "use": "Projected service-account tokens for workload identity", "insteadOf": "Long-lived static credentials in a Secret", "since": "1.21" },
+        { "use": "A Gateway API resource where the controller supports it", "insteadOf": "Controller-specific Ingress annotations", "since": "1.26 GA for core resources" }
+      ],
+      "forbiddenDependencies": [
+        { "id": "The latest image tag", "reason": "It makes a deployment unreproducible and a rollback meaningless, because the tag no longer identifies the image that was running.", "instead": "An immutable tag or a digest." },
+        { "id": "A workload without resource requests and limits", "reason": "It cannot be scheduled predictably and is the first candidate for eviction under node pressure.", "instead": "Explicit requests and limits derived from measured usage." },
+        { "id": "Plaintext Secret manifests in the repository", "reason": "base64 is encoding, not encryption — a committed Secret is a committed credential.", "instead": "An external secrets operator, or sealed secrets." },
+        { "id": "Running as root", "reason": "A container escape becomes a node compromise.", "instead": "runAsNonRoot with a read-only root filesystem and all capabilities dropped." }
+      ],
+      "concernImplementations": {
+        "observability": "Consistent labels, a scrape annotation or ServiceMonitor, and structured logs on stdout for the cluster collector.",
+        "health-and-readiness": "Distinct liveness, readiness, and startup probes on every workload.",
+        "configuration": "ConfigMaps mounted or projected as environment variables; the checksum annotated on the pod template so a config change triggers a rollout.",
+        "secrets-management": "An external secrets operator or sealed secrets; never a plaintext Secret in git.",
+        "authn-authz": "Least-privilege RBAC per service account, and a default-deny NetworkPolicy per namespace.",
+        "input-validation": "Admission policy — a validating admission policy or an OPA/Kyverno rule enforcing the required fields.",
+        "error-contract": "Not applicable at the manifest layer.",
+        "resilience": "Multiple replicas, a PodDisruptionBudget, topology spread, and correctly configured probes.",
+        "data-migrations": "A Job or an init container gated so it runs once per release, never on every pod start.",
+        "testing": "kubeconform for schema validation, a policy scan, and helm template or kustomize build diffed in CI.",
+        "supply-chain": "Image digests pinned, images signed and verified at admission, and an SBOM per image.",
+        "ci-gate": "Render, kubeconform, a policy scan such as Kyverno or Checkov, and a diff posted for review before apply.",
+        "api-contract": "Not applicable at the manifest layer.",
+        "rollback": "kubectl rollout undo verified in a non-production environment, plus a documented data-repair path for anything the rolled-back version wrote."
+      },
+      "notes": "stack-mappings.json already lists kubectl delete, kubectl apply -f and helm uninstall as forbiddenCommands enforced by the destructive gate. This baseline does not relax that."
+    },
+
+    {
+      "id": "unknown",
+      "name": "Unknown / generic",
+      "appliesToStacks": ["unknown"],
+      "runtime": { "name": "not detected", "minimum": "not detected", "channel": "not detected", "cadence": "not detected", "verifiedOn": "2026-05", "source": "model-recall" },
+      "architecture": {
+        "default": "None. Nothing was detected, so there is no baseline to apply. Read the repository, report what you actually find, and ask before asserting any architecture.",
+        "why": "A guessed baseline in an unrecognised stack is worse than no baseline, because it is indistinguishable from a recorded decision once it is written down. Golden rule G6 applies directly: an honest 'not found' outranks a plausible guess.",
+        "escalateTo": "Once the stack is identified, add it to config/stack-mappings.json and give it a baseline entry here in the same change."
+      },
+      "concernImplementations": {
+        "observability": "The stack-independent concerns above still apply. Name how this project satisfies each one, or record it as an open gap.",
+        "health-and-readiness": "Ask. Do not assume a mechanism exists.",
+        "configuration": "Ask.",
+        "secrets-management": "Ask — and scan for committed credentials regardless of stack.",
+        "authn-authz": "Ask.",
+        "input-validation": "Ask.",
+        "error-contract": "Ask.",
+        "resilience": "Ask.",
+        "data-migrations": "Ask.",
+        "testing": "Ask.",
+        "supply-chain": "Ask.",
+        "ci-gate": "Ask.",
+        "api-contract": "Ask.",
+        "rollback": "Ask."
+      },
+      "notes": "This entry exists so that 'unknown' resolves to an explicit instruction to stop and ask, rather than falling through to whichever baseline happens to be first in the array."
+    }
+  ]
+}

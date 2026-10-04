@@ -1,0 +1,184 @@
+# The hub marker file.
+#
+# Two audiences read this: a person opening the repository for the first time and wanting
+# one page that says what is here, and the view plane, which identifies a checkout as the
+# hub by the presence of this filename. It is a declaration of shape — what the hub
+# contains, how it reaches a consumer repository, and which file owns each fact. It is not
+# a runtime configuration file: the values the code actually reads live in hub.config.json
+# and under config/, and every block below that could drift points at its owner by
+# reference rather than repeating it.
+
+name: ai-orchestrator-hub
+version: "3.1.0"
+description: Centralized, technology-agnostic AI SDLC orchestrator for multi-repo projects
+
+# Org identity is NOT declared here. It is read from hub.config.json, which is the only
+# file in the repository allowed to carry an organization-identifying string (design
+# principle P6, golden rule G4). Duplicating the org name into this file would create a
+# second source that drifts the first time somebody renames a team, and it would defeat
+# the CI grep gate outright — that gate works precisely because exactly one file is
+# exempt from the scan. A second exemption is not a smaller gate, it is a habit.
+configRef: ./hub.config.json
+
+# --------------------------------------------------------------------------------------
+# Distribution
+#
+# The hub reaches a developer as a Claude Code plugin. This replaced a VS Code extension
+# that copied Markdown into every consumer repo's .github/ directory, and the difference
+# is not cosmetic: the extension had to re-implement skill loading, command routing and
+# content sync by hand, and it could not block anything, because it did not own the
+# generation stream. A plugin contributes skills, agents, commands and hooks to a runtime
+# that already knows how to load them, and a PreToolUse hook can return a "deny" decision
+# — so the system owns the ACTION stream instead, which is where a hallucination stops
+# being a sentence and becomes an edit.
+#
+# marketplace / installRef / minimumClaudeCodeVersion below also appear in
+# hub.config.json's `plugin` block, which is what the scripts read. They are repeated here
+# because this is the file a new reader opens, and an install coordinate a reader cannot
+# see is one they will guess wrong. Be honest about the cost: nothing currently checks
+# that the two agree. If they ever disagree, hub.config.json is correct.
+# --------------------------------------------------------------------------------------
+distribution:
+  mechanism: claude-code-plugin
+  marketplace: algoworks
+  installRef: orchestrator@algoworks
+  minimumClaudeCodeVersion: "2.1"
+  install:
+    - "/plugin marketplace add abhishek-narula-algoworks/Ai-Orchestration-Hub"
+    - "/plugin install orchestrator@algoworks"
+
+  # What actually lands inside a repository that installs the plugin. Two files, both
+  # under .github/, both recorded in the install state so `orchestrator.py uninstall` can
+  # reverse exactly what it created and nothing else.
+  writesIntoConsumerRepo:
+    - path: .github/orchestrator-context.md
+      why: The generated repo context. Regenerated, never hand-merged; a stale copy is
+        reported by doctor rather than silently trusted.
+    - path: .github/orchestrator-install.json
+      why: The install record — profile requested, files written with hashes, and the two
+        invisible side effects (the managed .gitignore block and any skip-worktree bits).
+        Without it an uninstall would be guesswork.
+
+  # What does NOT get copied, and therefore cannot drift per-repo. Under the previous
+  # model each of these was mirrored into .github/ in every connected repository, which
+  # meant N copies of one document and a sync mechanism to keep them equal. The plugin
+  # ships one copy and every repository reads it.
+  staysInThePlugin:
+    - agents/
+    - skills/
+    - commands/
+    - prompts/
+    - contexts/
+    - instructions/
+    - hooks/
+    - memory/shared/
+    - config/
+
+  overlayProfileRef: ./hub.config.json#/overlay/profile
+
+# --------------------------------------------------------------------------------------
+# Memory
+#
+# Four tiers of durable state plus one derived index. The full rules — the promotion
+# arithmetic, the decay model, and why every write goes through scripts/memory.py — are
+# in memory/README.md; this block is the map, not the argument.
+#
+# The column that matters is the last one. Anything marked syncToConsumers is loaded in
+# every repository connected to this hub, so a wrong entry there is not wrong once, it is
+# wrong everywhere, until somebody notices.
+# --------------------------------------------------------------------------------------
+memory:
+  tiers:
+    shared:
+      path: memory/shared/
+      scope: every connected repository
+      retention: permanent
+      syncToConsumers: true
+      categories: [anti-patterns, best-practices, instincts, tool-chains, skill-evolution-log]
+      note: Reaches every repository because the plugin ships it, not because anything is
+        copied into that repository. The Markdown here is a rendering of
+        memory/index/entries.json; hand edits are lost on the next render.
+
+    repos:
+      path: memory/repos/
+      scope: one repository
+      retention: permanent
+      syncToConsumers: true
+      syncScope: only the repository the entry is about
+      refreshTriggers: [merge_to_main, manual_request, stale_after_14_days]
+
+    decisions:
+      path: memory/decisions/
+      scope: one repository
+      retention: permanent, append-only
+      syncToConsumers: false
+      gitIgnored: true
+      note: Event-sourced (decide, supersede, redact) via scripts/decision.py. "Active" is
+        computed rather than stored, because the value of the log is being able to see
+        what was believed at the time, not only what is believed now.
+
+    sessions:
+      path: memory/sessions/
+      scope: one pipeline run
+      retention: discarded when the run ends
+      syncToConsumers: false
+      gitIgnored: true
+      holds: [pipeline checkpoints, band state, gate artifacts, gate verdicts, learning candidates]
+
+  index:
+    path: memory/index/
+    derived: true
+    rebuildable: true
+    gitIgnored: true
+    note: The store that ranking and promotion actually operate on. Derived, so it is
+      rebuilt rather than restored, and never committed.
+
+# --------------------------------------------------------------------------------------
+# Pipeline
+# --------------------------------------------------------------------------------------
+pipeline:
+  graphRef: ./config/pipeline-graph.json
+  qualityGateDefault: 80
+  note: The DAG itself — phases, parallelism, human gates and checkpoint paths — lives in
+    the referenced file, because a pipeline expressed in two places is a pipeline that
+    executes differently from how it reads. qualityGateDefault is the threshold applied
+    when a phase declares no gate of its own, and matches the plugin's
+    quality_gate_threshold user setting.
+
+# --------------------------------------------------------------------------------------
+# Agents
+#
+# Ten agents. `tier` is a routing hint, not a capability claim: POWERFUL means the work
+# needs reasoning depth and the cost is justified; FAST means the work is a lookup where
+# latency dominates. graph-navigator is the only FAST agent — it answers "where does this
+# symbol live" from a prebuilt index, and a wrong answer there is cheap to detect, because
+# the symbol either exists in the index or it does not.
+#
+# The list the validator enforces is AGENTS in scripts/_lib.py, and the list Claude Code
+# loads is the agents/ directory declared in .claude-plugin/plugin.json. This block is the
+# human-readable map of agent to tier to skills. Nothing cross-checks the three, so an
+# added agent needs an entry in each.
+# --------------------------------------------------------------------------------------
+agents:
+  - { id: orchestrator,     file: agents/orchestrator.agent.md,     tier: POWERFUL, skills: [sdlc-orchestrator, cross-repo-orchestration, autonomous-loop, release-engineering, continuous-learning, structural-graph, grounding-guard] }
+  - { id: analyst,          file: agents/analyst.agent.md,          tier: POWERFUL, skills: [repo-context-builder, structural-graph, context-budget] }
+  - { id: developer,        file: agents/developer.agent.md,        tier: POWERFUL, skills: [cqrs-developer, mcp-tool-composer, verification-loop] }
+  - { id: reviewer,         file: agents/reviewer.agent.md,         tier: POWERFUL, skills: [quality-sentinel, grounding-guard] }
+  - { id: ba,               file: agents/ba.agent.md,               tier: POWERFUL, skills: [sdlc-orchestrator, knowledge-base] }
+  - { id: qa,               file: agents/qa.agent.md,               tier: POWERFUL, skills: [quality-sentinel, verification-loop] }
+  - { id: graph-navigator,  file: agents/graph-navigator.agent.md,  tier: FAST,     skills: [structural-graph, context-budget] }
+  - { id: architect,        file: agents/architect.agent.md,        tier: POWERFUL, skills: [architecture-decision, repo-context-builder] }
+  - { id: security,         file: agents/security.agent.md,         tier: POWERFUL, skills: [security-review, verification-loop] }
+  - { id: knowledge-curator, file: agents/knowledge-curator.agent.md, tier: POWERFUL, skills: [knowledge-base, grounding-guard] }
+
+# --------------------------------------------------------------------------------------
+# Budgets
+# --------------------------------------------------------------------------------------
+budgets:
+  budgetsRef: ./config/token-budgets.json
+  note: Every character ceiling lives in the referenced file, including the discovery
+    budget, which is the expensive one because it is paid unconditionally by every user in
+    every repository before anyone types a word. The ceilings are not repeated here — a
+    budget with two homes is a budget that is enforced against whichever copy the reader
+    happened to open. validate-structure.py pins the measured value against the ceiling so
+    that growth has to arrive as a visible line in a diff.

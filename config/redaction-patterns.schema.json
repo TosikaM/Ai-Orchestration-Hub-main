@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Redaction Patterns",
+  "description": "The canonical redaction taxonomy: what counts as a secret, how confidently, what suppresses a match, and what each sink does with a finding. One source, read by scripts/redact.py, lib/redact.js, the memory write path, and the generated documentation. Two taxonomies would mean a string that is blocked on one path and published on another, and nobody would find out from the code which one was right.",
+  "type": "object",
+  "required": ["tiers", "patterns", "sinks"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+
+    "tiers": {
+      "type": "object",
+      "description": "The three severity tiers and what each one does. Three, and fixed: the calibration rule is that a gate which cries wolf gets ignored, so only genuinely-secret credentials block. A fourth tier would exist to hold the findings nobody wants to act on, which is what LOW already is.",
+      "required": ["HIGH", "MEDIUM", "LOW"],
+      "additionalProperties": false,
+      "properties": {
+        "HIGH": { "type": "string", "description": "Blocks the write or the send. There is deliberately no per-pattern key to disable HIGH blocking." },
+        "MEDIUM": { "type": "string", "description": "Confirms with the user. PII, internal leaks, and credential shapes with a high false-positive rate." },
+        "LOW": { "type": "string", "description": "Surfaced only. No prompt, no block." }
+      }
+    },
+
+    "visibilityRule": {
+      "type": "string",
+      "description": "How repository visibility affects tiering. The answer is that it does not promote: a public repo earns sterner confirmation on MEDIUM findings, it does not turn MEDIUM into HIGH. Auto-promotion is how a gate becomes noise, and noise is how a gate gets switched off."
+    },
+
+    "redosRule": {
+      "type": "string",
+      "description": "The linear-time requirement for every regex here. These patterns run on attacker-influenced text — synced content, tool output, pasted documents — so a catastrophically backtracking pattern is a denial of service in the guard that was supposed to be protecting you."
+    },
+
+    "patterns": {
+      "type": "array",
+      "description": "The detection rules, most specific first is not required but is kinder to read.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "tier", "regex", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[._][a-z0-9]+)*$",
+            "description": "Stable dotted identifier, e.g. aws.access_key. It appears in findings and in suppression decisions, so renaming one invalidates every reference to it."
+          },
+          "tier": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+          "category": {
+            "type": "string",
+            "description": "Grouping for reporting — secret, pii, internal, hygiene. Open rather than enumerated, because the taxonomy of what leaks grows and forcing a new kind of finding into an old category records the wrong fact."
+          },
+          "regex": {
+            "type": "string",
+            "format": "regex",
+            "description": "The detection pattern. Capture group 1, when present, is the span treated as the secret; without a group the whole match is used."
+          },
+          "nearRegex": {
+            "type": "string",
+            "format": "regex",
+            "description": "Proximity requirement. A pattern that matches any forty base64 characters is useless on its own; requiring the surrounding text to also mention the credential's name is what turns it from noise into a finding."
+          },
+          "nearWindow": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Characters either side of the match searched for nearRegex."
+          },
+          "autoRedactable": {
+            "type": "boolean",
+            "description": "Whether the match may be replaced with redactToken automatically. Only safe where the redacted form still reads correctly — a home directory path, an email address — never for a credential, because a silently sanitized secret reads as complete and nobody goes back to rotate it."
+          },
+          "redactToken": { "type": "string", "description": "The replacement text used when autoRedactable is true." },
+          "description": {
+            "type": "string",
+            "description": "What this matches and, where the tier is arguable, why it sits where it does."
+          }
+        }
+      }
+    },
+
+    "suppressions": {
+      "type": "array",
+      "description": "Rules that withdraw a finding. Each one is a hole in the gate, so each one carries a scope that says exactly how big the hole is.",
+      "items": {
+        "type": "object",
+        "required": ["id", "regex", "scope", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "regex": { "type": "string", "format": "regex" },
+          "scope": {
+            "type": "string",
+            "enum": ["matched-span", "path"],
+            "description": "What the suppression regex is tested against. 'matched-span' tests the matched text only — a real key on the same line as the word 'example' still counts, which a line-scoped rule would have missed. 'path' tests the file path."
+          },
+          "appliesToTiers": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+            "uniqueItems": true,
+            "description": "Limits the suppression to certain tiers. Test-fixture paths suppress MEDIUM and LOW only: a HIGH-tier credential in a test file is still a HIGH-tier credential, and test files are where they most often get committed."
+          },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "sinks": {
+      "type": "object",
+      "description": "Every place scanned text can go, keyed by sink name, each declaring what happens when the scan itself cannot complete. Naming the sinks explicitly is what makes the asymmetry deliberate rather than accidental.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["polarity", "why"],
+        "additionalProperties": false,
+        "properties": {
+          "polarity": {
+            "type": "string",
+            "enum": ["fail-closed", "fail-open"],
+            "description": "fail-closed refuses the operation when the scan cannot complete; fail-open allows it. Storage and publication sinks are closed because a leak there replicates; the interactive chat stream is open because blocking a user's primary interaction over a scan failure is the worse outcome."
+          },
+          "why": {
+            "type": "string",
+            "description": "The reason this sink has that polarity, in terms of what goes wrong — who sees the text, and whether it can be recalled."
+          }
+        }
+      }
+    }
+  }
+}

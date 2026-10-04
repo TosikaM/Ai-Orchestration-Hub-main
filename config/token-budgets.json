@@ -1,0 +1,67 @@
+{
+  "$schema": "./token-budgets.schema.json",
+  "version": 2,
+  "description": "Character ceilings for every context layer. ~4 chars per token is the planning ratio. Changing a value here changes runtime behavior immediately; no code edit is required. Every ceiling is guarded by validate-structure.py's ratchet pins, because a ceiling a careless edit can disable is not a ceiling.",
+  "charsPerTokenEstimate": 4,
+  "discovery": {
+    "perSkillFrontmatterBytes": 240,
+    "aggregateFrontmatterBytes": 4000,
+    "derivation": {
+      "method": "For each folder in skills/, parse SKILL.md frontmatter; sum utf-8 byteLength(name) + byteLength(description). Re-derive with: python scripts/measure-discovery-budget.py",
+      "measuredAt": "2026-09-09",
+      "measuredValue": 2031,
+      "skillCount": 17,
+      "dominantSkill": "git-workflow (145B)",
+      "headroomPercent": 49.2,
+      "measuredBy": "scripts/measure-discovery-budget.py, run on 2026-09-09 with Python 3.12.10. An earlier revision of this field recorded a hand measurement taken when no toolchain was installed; the script has since confirmed it.",
+      "ratchetProtocol": "Growth that is a real feature: re-run the measurement and update measuredValue AND measuredAt AND dominantSkill in the SAME commit, so the increase is a visible line in the diff. Accidental growth (trigger text that belongs in '## Routing'): fix the frontmatter instead of the ceiling. After a reduction lands: re-measure so the ceiling ratchets DOWN and the win is locked in."
+    },
+    "rationale": "Frontmatter name+description for all skills is parsed and held in context in every session, before the user types anything. This is the most expensive budget in the system because it is paid unconditionally, by every user, in every repo, on every conversation."
+  },
+  "eager": {
+    "totalChars": 18000,
+    "layers": {
+      "skillMd": 8000,
+      "commandFile": 2000,
+      "evidenceManifest": 1200,
+      "activeDecisions": 900,
+      "repoContext": 2500,
+      "memoryAntiPatterns": 1500,
+      "knowledgeDigest": 1000,
+      "structuralGraph": 2000,
+      "memoryBestPractices": 1500,
+      "memoryToolChains": 1200
+    },
+    "rationale": "Sum of layers (21800) intentionally exceeds totalChars (18000). Allocation is greedy in priority order and trims the tail, so a large SKILL.md borrows headroom from layers that came in short instead of forcing every layer to shrink uniformly and no layer to be useful."
+  },
+  "priority": [
+    "skillMd",
+    "commandFile",
+    "evidenceManifest",
+    "activeDecisions",
+    "repoContext",
+    "memoryAntiPatterns",
+    "knowledgeDigest",
+    "structuralGraph",
+    "memoryBestPractices",
+    "memoryToolChains"
+  ],
+  "memoryRead": {
+    "maxInjectedInstincts": 6,
+    "minConfidenceForInjection": 0.7,
+    "maxInjectedDecisions": 8,
+    "rationale": "Shared memory grows monotonically; the eager memory layers do not. Without a read-side cap, the digest truncates by recency alone, and recency degrades as a relevance proxy at exactly the moment the store becomes valuable."
+  },
+  "sessionStart": {
+    "maxChars": 8000,
+    "rationale": "Session-start injection is the most easily-bloated always-on surface there is. It is the one place where 'we load context automatically' silently becomes 'we spend 2,000 tokens before you type' without anyone deciding to."
+  },
+  "mcpSurface": {
+    "maxDefaultConnectors": 1,
+    "maxToolsAcrossConnectors": 30,
+    "rationale": "Every MCP tool description is always-on context, in exactly the way the discovery budget exists to control. A section whose whole premise is that always-on cost is the expensive kind cannot omit the MCP surface from its accounting."
+  },
+  "warnAtPercent": 85,
+  "hardFail": false,
+  "hardFailRationale": "P5 in action. Blowing the eager budget degrades answer quality; it is not a safety incident. The system trims in priority order, appends an explicit truncation marker, warns, records the overrun, and proceeds. Halting a user's work over a budget would be a worse outcome than a trimmed prompt."
+}

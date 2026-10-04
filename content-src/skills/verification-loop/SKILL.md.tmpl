@@ -1,0 +1,70 @@
+---
+name: verification-loop
+description: Runs the six-phase pre-PR gate — build, types, lint, tests, security scan, diff review. Stack-adaptive.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: quality
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** verify, pre-PR, "does it build", check it, gate.
+**USE FOR:** proving a change is shippable by running the repo's own commands.
+**NOT FOR:** scoring code quality — that is `quality-sentinel`. Release readiness —
+that is `release-engineering`.
+
+## The Six Phases
+
+| # | Phase | Resolved from |
+|---|-------|---------------|
+| 1 | Build | `stack.commands.build` |
+| 2 | Types | `stack.commands.typecheck`, else the build's type step |
+| 3 | Lint | `stack.commands.lint` |
+| 4 | Tests | `stack.commands.test` |
+| 5 | Security scan | `security-review` on the diff |
+| 6 | Diff review | Read the whole diff. Not a summary of it. |
+
+Commands come from `config/stack-mappings.json`, tried in order, **never hardcoded**.
+
+## The Reporting Rule
+
+Report each phase as **pass**, **fail**, or **not run** — with the actual command output,
+not a paraphrase of it.
+
+A phase that could not run is reported as "not run". Never as passed. This is the single
+most important rule in this skill: a green report that includes a step which silently
+did not execute is worse than a red one, because it ends the investigation.
+
+## When No Candidate Command Works
+
+Do not report "not run" forever. That is a permanent, invisible gap.
+
+1. Ask the user, once, what the command is for this repo.
+2. Write the answer into `.github/orchestrator-context.md` under `## Verified Commands`.
+3. The context generator is forbidden from overwriting that section, so the answer
+   persists.
+
+A one-time question that persists beats a permanent "not detected". The project owns its
+configuration; this system reads it.
+
+{{EVIDENCE_DIRECTIVE}}
+
+## Output
+
+```
+build    PASS   dotnet build            (4.2s)
+types    PASS   included in build
+lint     FAIL   dotnet format --verify  (3 files) <actual output>
+tests    PASS   dotnet test             (127 passed, 0 failed)
+security PASS   no findings on the diff
+diff     PASS   reviewed 8 files, 214 lines
+```
+
+{{GROUNDING_CONTRACT}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

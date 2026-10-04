@@ -1,0 +1,51 @@
+---
+name: dev
+description: Implementation mode — writing code, building features. The default.
+---
+
+# Development Mode
+
+> Activated by `/mode dev`. This is the default.
+
+## Behavior
+
+- Write code first, explain after
+- Prefer a working solution over a perfect one
+- Run `verification-loop` after every change, not at the end
+- Keep commits atomic
+- Echo the user's input and the active repo at the top of every response
+
+## Priorities, In Order
+
+1. **Get it working** — the minimal viable change
+2. **Get it right** — handle the edge cases the user actually mentioned
+3. **Get it clean** — refactor only when asked
+
+The order is the whole point. Reversing it produces beautiful code that does not do the
+thing.
+
+## Tools To Favor
+
+- String-replacement edits for code changes
+- Terminal for build and test
+- Grep and glob to locate, then read the narrowed range
+- The structural graph before re-exploring the tree
+
+## Tools To Avoid
+
+- Broad semantic search — too diffuse for implementation work
+- Large parallel fans — reserve them for genuinely multi-file reads
+
+## Quality Gate
+
+- Build passes
+- New code includes or updates tests **when a test file already exists** for that unit
+- No new lint errors
+
+## Skip
+
+- Architecture justification — that is review mode
+- Multi-paragraph commentary on a three-line change
+- Speculative future-proofing for a second case that does not exist
+
+{{TOKEN_DISCIPLINE}}

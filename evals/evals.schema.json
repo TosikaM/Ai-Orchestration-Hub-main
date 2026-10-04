@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestrator Eval Suite",
+  "description": "The shape of evals/evals.json. This schema is deliberately strict about the case envelope and deliberately open about the assertions inside it; the two decisions are explained on the properties they apply to.",
+  "type": "object",
+  "required": ["version", "testCases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Relative path back to this file, so an editor validates the suite while it is being written rather than at CI time."
+    },
+    "version": {
+      "type": "string",
+      "description": "Suite version, tracking the hub version it was written against. A threshold change is a version change: comparing scores across two different definitions of the same case id is how a regression gets explained away."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the suite covers and, more usefully, what it was extended to cover."
+    },
+    "tierRule": {
+      "type": "string",
+      "description": "The written rule for assigning a tier. It lives in the data file rather than only in a document because the next person adding a case reads the file, not the document, and an unwritten rule becomes 'whatever the last case did'."
+    },
+    "testCases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Every case in the suite. Each id must also appear in evals/touchfiles.json; validate-structure.py enforces that, because a case with no touchfile entry is never diff-selected and is therefore decoration.",
+      "items": { "$ref": "#/definitions/testCase" }
+    }
+  },
+  "definitions": {
+    "testCase": {
+      "type": "object",
+      "required": ["id", "name", "agent", "tier", "input", "expectedOutput", "scoreThreshold"],
+      "additionalProperties": false,
+      "description": "The case envelope is closed — additionalProperties is false — so a misspelled key such as 'sceneThreshold' fails validation instead of silently doing nothing. That is the opposite of the decision made for expectedOutput below, and the difference is intentional: the envelope is a fixed contract the runner reads by name, while the assertions are the part that grows.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^eval-\\d{3}$",
+          "description": "Stable identifier, eval-NNN. Never renumber a case: the id is the join key between evals.json, touchfiles.json, historical run records under evals/runs/, and every document that cites a case by number."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A short phrase naming the behavior under test, not the input. It appears in the runner's PASS/FAIL output, which is often the only part of the suite anybody reads."
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "orchestrator",
+            "analyst",
+            "developer",
+            "reviewer",
+            "ba",
+            "qa",
+            "graph-navigator",
+            "architect",
+            "security",
+            "knowledge-curator"
+          ],
+          "description": "The agent whose behavior the case measures. The enum is the declared agent roster; validate-structure.py cross-checks it against scripts/_lib.py AGENTS, so a case cannot be written against an agent that does not exist."
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["gate", "periodic"],
+          "description": "gate runs on every pull request and blocks the merge; periodic runs weekly. See the suite's tierRule field for how a case earns each."
+        },
+        "input": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The prompt given to the agent, phrased the way a user would phrase it. It must not hint at the trap — the note field carries that, and the runner never puts the note in the prompt."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional. Why the case is shaped this way, and what the realistic failure looks like. This is where the reasoning that makes a subtle case non-obvious is recorded, so the case survives a maintainer who was not there when it was written. It is documentation for humans and is never sent to the agent under test."
+        },
+        "expectedOutput": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "An open object of assertions. Keys and value types differ per case by design, and this schema deliberately does not constrain them: over-constraining here would mean that adding a new kind of check — a numeric bound, an ordered list, a must-not-appear string — requires a schema migration before the check can be written. The cost of that openness is that a typo inside expectedOutput will not be caught here; it shows up as an assertion the judge cannot evaluate, which the runner surfaces in the score rather than hiding."
+        },
+        "scoreThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "The score at or above which the case passes. 100 means there is no partial credit — reserved for cases whose failure mode is distributing a secret or obeying an injected instruction, where a 'mostly correct' run is still a full incident."
+        }
+      }
+    }
+  }
+}

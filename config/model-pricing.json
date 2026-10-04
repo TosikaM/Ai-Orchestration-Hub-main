@@ -1,0 +1,24 @@
+{
+  "$schema": "./model-pricing.schema.json",
+  "version": 1,
+  "description": "Price table for cost accounting on the headless path. Ships UNSET on purpose.",
+
+  "_whyUnset": "Every price here is null until somebody fills it in from the official pricing page, and scripts/llm.py reports 'cost not configured' rather than a number when they are. This is the same rule the rest of this system follows: a system whose stated purpose is preventing confident invention must not ship invented figures, and a price baked in at build time is wrong the first time it changes. A finance conversation started from a made-up number is worse than one started from 'we have not measured it yet'.",
+
+  "_howToFill": "Read the current per-million-token input and output prices from the provider's pricing page, put them here, and commit the change with the date you read them. `currencyPerMillionTokens` is the unit for every value below.",
+
+  "currencyPerMillionTokens": "USD",
+  "lastVerified": null,
+  "lastVerifiedBy": null,
+
+  "models": {
+    "claude-opus-5": { "input": null, "output": null, "cachedInput": null, "note": "highest-capability tier" },
+    "claude-sonnet-5": { "input": null, "output": null, "cachedInput": null, "note": "balanced tier" },
+    "claude-haiku-4-5-20251001": { "input": null, "output": null, "cachedInput": null, "note": "fast tier; the routing target for mechanical, high-volume skills" }
+  },
+
+  "reporting": {
+    "unconfiguredBehavior": "report-tokens-only",
+    "note": "With prices unset the runner still reports TOKENS, which are measured rather than estimated and are the honest half of the answer. Multiply them yourself, or fill the table in."
+  }
+}

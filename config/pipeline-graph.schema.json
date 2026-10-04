@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDLC Pipeline Graph",
+  "description": "The SDLC pipeline expressed as a directed graph rather than an ordered array. The array form cannot represent two phases that genuinely run at the same time, so a system that described parallel review and test in prose while executing them in sequence was describing something it did not do. Phases are keyed by name and reference each other by name; the graph is what the runner walks.",
+  "type": "object",
+  "required": ["entry", "phases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+
+    "entry": {
+      "type": "string",
+      "description": "The phase a new pipeline starts at. Required and single: a graph with no declared entry is a graph the runner has to guess at, and a guess that lands on a later phase skips the analysis every later phase depends on."
+    },
+
+    "phases": {
+      "type": "object",
+      "description": "Every phase in the graph, keyed by phase name. The key is the identifier used in `entry`, in `next`, in `parallelWith`, and in the checkpoint and gate-artifact path templates.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["next", "gate", "humanGate"],
+        "additionalProperties": false,
+        "properties": {
+          "next": {
+            "type": "array",
+            "description": "Successor phase names. An empty array marks a terminal phase. Two entries mean the successors both become eligible, which is how parallelism is expressed on the outbound side.",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "gate": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Minimum quality score, 0-100, that this phase must reach before the pipeline advances past it. Zero means no automated score gate — not that the phase is unimportant, only that its output is not the kind of thing a number judges."
+          },
+          "humanGate": {
+            "type": "boolean",
+            "description": "Whether a person must approve before the pipeline advances. True means the phase writes a review artifact and stops; a Stop hook refuses to end the session while an artifact exists with no matching verdict file. A gate implemented as a notification is a request, not a gate."
+          },
+          "parallelWith": {
+            "type": "array",
+            "description": "Phases that may run concurrently with this one. Declared on both sides so the relationship is readable from either phase, and so a one-sided edit is visible as an asymmetry rather than as silently serialized execution.",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "agent": {
+            "type": "string",
+            "description": "The agent that owns this phase. Must be a declared agent — see AGENTS in scripts/_lib.py and the agents block in orchestrator-hub.yml."
+          },
+          "skill": {
+            "type": "string",
+            "description": "The skill this phase invokes. Must name a folder under skills/; a phase pointing at a skill that does not exist runs the default behaviour and looks like it worked."
+          },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "rules": {
+      "type": "object",
+      "description": "Execution semantics shared by every phase — when a phase becomes eligible, when state is checkpointed, and where the artifacts of a run are written.",
+      "additionalProperties": false,
+      "properties": {
+        "activateWhenAllParentsComplete": {
+          "type": "boolean",
+          "description": "Join semantics. True is an AND-join: a phase with two parents waits for both. False would activate on the first parent, which for a deploy phase fed by review and test means deploying on whichever of the two happened to finish first."
+        },
+        "checkpointAfterEveryGate": { "type": "boolean" },
+        "checkpointOnPreCompact": {
+          "type": "boolean",
+          "description": "Checkpoint before the context window is compacted. Compaction is the moment in-flight pipeline state is most likely to be lost, and it is not a moment the user chooses."
+        },
+        "checkpointPath": { "type": "string" },
+        "bandPath": { "type": "string" },
+        "gateArtifactPath": { "type": "string" },
+        "gateVerdictPath": { "type": "string" },
+        "maxGateFailuresBeforeEscalation": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many times a phase may fail its gate before the run stops retrying and asks a human. Without a ceiling, a phase that cannot pass its gate retries until the budget is gone and reports no useful reason for it."
+        }
+      }
+    },
+
+    "humanGateProtocol": {
+      "type": "object",
+      "description": "How a human gate is actually enforced, and why that mechanism was chosen. Kept in the config rather than only in docs so the answer travels with the thing it describes.",
+      "additionalProperties": false,
+      "properties": {
+        "mechanism": { "type": "string" },
+        "why": { "type": "string" }
+      }
+    }
+  }
+}

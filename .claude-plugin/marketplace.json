@@ -1,0 +1,19 @@
+{
+  "name": "algoworks",
+  "owner": {
+    "name": "Algoworks AI Platform Team"
+  },
+  "metadata": {
+    "description": "Algoworks internal agent tooling"
+  },
+  "plugins": [
+    {
+      "name": "orchestrator",
+      "source": "./",
+      "description": "AI SDLC orchestrator — 17 skills, 10 agents, 28 commands, 16 executing hooks, cross-repo pipelines, blocking grounding gates, policy-governed autonomy, enforced token budgets",
+      "version": "3.2.0",
+      "license": "PROPRIETARY",
+      "category": "workflow"
+    }
+  ]
+}

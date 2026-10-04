@@ -1,0 +1,65 @@
+---
+name: repo-context-builder
+description: Builds deep understanding of a repository and traces a field or feature through every architectural layer.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Write, Bash]
+metadata:
+  version: 1.0.0
+  category: analysis
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** analyze, trace, impact, "how does X work", "where is Y handled", "what breaks if".
+**USE FOR:** understanding before changing; tracing a field through layers; producing or
+refreshing the repo context file.
+**NOT FOR:** writing code — that is `cqrs-developer`. Scoring code — that is
+`quality-sentinel`. Building the symbol index — that is `structural-graph`.
+
+## Before Starting
+
+- Read `memory/shared/anti-patterns.md` and this skill's Lessons Learned
+- If `.github/orchestrator-context.md` already exists, **read it first and re-analyze
+  only what changed.** A full re-scan of a profiled repo is the most common avoidable
+  cost in this system
+
+## Modes
+
+1. **Full deep-dive** — a repo nobody has profiled
+2. **Targeted feature trace** — one field or feature, every layer
+3. **Incremental update** — refresh a stale context file
+4. **Multi-repo map** — a band, producing `field-trace-index.md`
+
+## The Five Mandatory Steps
+
+1. Map the workspace structure, three or more levels deep.
+2. Read the conventions: `CLAUDE.md`, `copilot-instructions.md`, README, `tsconfig.json`,
+   lint config, editorconfig. **The repo's stated conventions outrank hub defaults.**
+3. Trace an analogous existing pattern through **every** layer — model, DTO, service,
+   controller, storage, component, test. Tracing one layer and inferring the rest is the
+   single most common source of a wrong impact analysis, and it reads as thorough.
+4. Identify the mapping mechanism, per stack: .NET `CopyPropertiesTo`/AutoMapper ·
+   Angular reactive forms or NgRx · React Redux or hooks · Spring DTO mappers · Node
+   plain objects · Python Pydantic.
+5. Map dependencies — imports, exports, and any cross-repo contracts.
+
+## Output
+
+`.github/orchestrator-context.md`, created or updated, with seven sections: tech stack ·
+architecture pattern · conventions · layer map · field trace path · dependencies ·
+domain entities. Every layer claim carries a `file:line`.
+
+**Two sections are never overwritten:** `## Integration Points` and `## Verified
+Commands`. Both are maintained by hand or by the verification loop, a scanner cannot
+infer them, and regenerating them destroys knowledge the scanner cannot recover.
+
+Anything not detected is written as the literal string "not detected".
+
+{{GROUNDING_CONTRACT}}
+
+{{CONFIDENCE_TAXONOMY}}
+
+{{TOKEN_DISCIPLINE}}
+
+{{LESSONS_LEARNED}}

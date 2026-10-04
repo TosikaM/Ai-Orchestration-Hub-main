@@ -1,0 +1,18 @@
+<!-- Activity-bar icon. VS Code masks activity-bar icons to a single theme colour, so
+     this is stroked in currentColor with no fills and no gradients — anything else is
+     silently flattened and comes out looking like a smudge.
+
+     The shape is the pipeline DAG the orchestrator actually runs: one entry node, a
+     fan-out to two siblings that execute in parallel, and a join. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+     fill="none" stroke="currentColor" stroke-width="1.6"
+     stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="4" cy="12" r="2.2" />
+  <circle cx="12" cy="5" r="2.2" />
+  <circle cx="12" cy="19" r="2.2" />
+  <circle cx="20" cy="12" r="2.2" />
+  <path d="M5.7 10.6 10.3 6.4" />
+  <path d="M5.7 13.4 10.3 17.6" />
+  <path d="M13.7 6.4 18.3 10.6" />
+  <path d="M13.7 17.6 18.3 13.4" />
+</svg>

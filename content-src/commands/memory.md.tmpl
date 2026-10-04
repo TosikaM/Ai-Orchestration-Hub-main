@@ -1,0 +1,29 @@
+---
+description: Query, promote, or prune two-tier learning memory.
+argument-hint: "[search <query>|promote|prune]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-004, eval-015]
+---
+
+# Memory
+
+Query and maintain memory using the `continuous-learning` skill.
+
+## Skill Loaded
+**Required:** Read `skills/continuous-learning/SKILL.md` and `commands/memory.md`.
+
+## Usage
+```
+/memory search nullable migration
+/memory promote
+```
+
+## Output
+Ranked matches with confidence, repos seen, and last reinforced. For `promote`: what
+crossed the threshold and why.
+
+## Notes
+Ranking is confidence x recency x repo-match. Recency alone degrades as a relevance
+proxy exactly as the store becomes valuable.

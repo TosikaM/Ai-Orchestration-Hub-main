@@ -1,0 +1,455 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CNP LINQ - Sponsor Application: Organization Information</title>
+<!-- Tailwind CSS v3 with forms and container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0b2a56',
+              navyDark: '#071d3d',
+              navyActive: '#133a70',
+              blue: '#0d6efd',
+              blueHover: '#0b5ed7',
+              accentBlue: '#e8f1fd',
+              border: '#d0d7de',
+              textDark: '#1e293b',
+              textMuted: '#64748b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="base-layout">
+    /* Global scrollbar and font rendering */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+<style data-purpose="form-controls">
+    /* Custom subtle styling for form elements */
+    .form-control-input {
+      width: 100%;
+      border-radius: 0.375rem;
+      border: 1px solid #d1d5db;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.875rem;
+      color: #1f2937;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control-input:focus {
+      border-color: #2563eb;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .custom-select {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.6rem center;
+      background-repeat: no-repeat;
+      background-size: 1.25em 1.25em;
+      padding-right: 2.25rem;
+      appearance: none;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="bg-[#f8f9fa] text-slate-800 antialiased min-h-screen flex">
+<!-- BEGIN: Sidebar -->
+<aside class="w-64 bg-[#081d3d] text-white flex-shrink-0 flex flex-col justify-between select-none fixed inset-y-0 left-0 z-30" data-purpose="main-sidebar">
+<div>
+<!-- Platform Logo & Title -->
+<div class="px-6 py-5 border-b border-slate-800/80 flex items-center space-x-3"><a href="#" class="flex items-center gap-3 py-0.5 group"><div class="h-9 w-9 flex items-center justify-center rounded-lg bg-blue-600/20 flex-shrink-0 p-1"><svg viewBox="0 0 48 48" fill="none" class="w-7 h-7"><circle cx="24" cy="24" r="19" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-dasharray="85 30"></circle><circle cx="24" cy="24" r="12" stroke="#60a5fa" stroke-width="4" fill="none" stroke-dasharray="50 20" transform="rotate(45 24 24)"></circle><circle cx="24" cy="24" r="4.5" fill="#93c5fd"></circle></svg></div><div class="flex flex-col min-w-0"><span class="text-white font-bold text-base tracking-tight leading-tight truncate">CNP LINQ</span><span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase truncate">Child Nutrition</span></div></a></div>
+<!-- Main Navigation Menu -->
+<nav aria-label="Main Navigation" class="mt-4 px-3 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Dashboard
+        </a>
+<!-- Applications (Active) -->
+<a aria-current="page" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-md bg-[#1853a2] text-white shadow-sm" href="#">
+<svg class="w-5 h-5 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Applications
+        </a>
+<!-- Sites -->
+<a class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Sites
+        </a>
+<!-- Documents -->
+<a class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Documents
+        </a>
+<!-- Notifications with Badge -->
+<a class="flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<div class="flex items-center">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+            Notifications
+          </div>
+<span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">2</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Reports
+        </a>
+<!-- Audit History -->
+<a class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-slate-300 hover:bg-[#133a70] hover:text-white transition-colors group" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+          Audit History
+        </a>
+</nav>
+</div>
+<!-- Bottom Actions: Help & Sign Out -->
+<div class="p-4 border-t border-slate-800/80 space-y-1">
+<a class="flex items-center px-3 py-2 text-sm font-medium text-slate-300 rounded-md hover:bg-[#133a70] hover:text-white transition-colors" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+        Help
+      </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium text-slate-300 rounded-md hover:bg-[#133a70] hover:text-white transition-colors" href="#">
+<svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+        Sign Out
+      </a>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Outer Wrapper -->
+<div class="flex-1 ml-64 flex flex-col min-w-0" data-purpose="content-area">
+<!-- BEGIN: Top Navigation Bar -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-20" data-purpose="top-bar">
+<div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"><div class="flex items-center space-x-4"><button type="button" class="text-slate-600 hover:text-slate-900 focus:outline-none p-1.5 rounded hover:bg-gray-100 transition-colors" aria-label="Toggle Navigation Menu"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="flex items-center space-x-6"><div class="flex items-center space-x-2"><span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Program:</span><select class="custom-select text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded px-2.5 py-1 focus:ring-1 focus:ring-blue-600 focus:border-blue-600"><option selected="">NSLP</option><option>SBP</option><option>SFSP</option><option>CACFP</option></select></div><div class="flex items-center space-x-2"><span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Program Year:</span><select class="custom-select text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-300 rounded px-2.5 py-1 focus:ring-1 focus:ring-blue-600 focus:border-blue-600"><option selected="">2026-27</option><option>2025-26</option><option>2024-25</option></select></div></div></div><div class="flex items-center space-x-5"><div class="relative cursor-pointer hover:opacity-80 transition-opacity"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg><span class="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">2</span></div><div class="flex items-center space-x-3 cursor-pointer pl-4 border-l border-gray-200"><div class="w-8 h-8 rounded-full bg-[#0d52b7] text-white flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0">JS</div><div class="text-right"><div class="text-xs font-semibold text-slate-500 leading-none">ABC School District</div><div class="text-sm font-bold text-gray-900 leading-tight mt-0.5">John Smith <span class="text-xs font-normal text-gray-500">• Sponsor Director</span></div></div><svg class="w-4 h-4 text-gray-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div></div></div>
+</header>
+<!-- END: Top Navigation Bar -->
+<!-- BEGIN: Main Page Content -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6" data-purpose="sponsor-application-view">
+<!-- Breadcrumb Link -->
+<nav aria-label="Breadcrumb" class="mb-3">
+<a class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors" href="#">
+<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Back to Packet Overview
+        </a>
+</nav>
+<!-- Page Header & Action Buttons -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-gray-200" data-purpose="header-section"><div class="flex flex-col gap-1.5">  <div class="flex items-center space-x-3">    <h1 class="text-2xl font-bold text-slate-900 tracking-tight leading-none">Sponsor Application</h1>    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">      IN PROGRESS    </span>  </div>  <div class="text-xs text-slate-500 flex flex-wrap items-center gap-x-2 font-medium">    <span class="">Application ID: #APP-10234</span>    <span class="">•</span>    <span class="">ABC School District</span>    <span class="">•</span>    <span class="">FEIN: 12-3456789</span>    <span class="">•</span>    <span class="">Iowa</span>  </div></div><div class="flex items-center space-x-3 self-end md:self-auto">  <div class="flex items-center text-xs text-slate-500 mr-2">    <span class="">Autosaved: 2 min ago</span>    <svg class="w-4 h-4 ml-1.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">      <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>    </svg>  </div>  <button class="px-4 py-2 border border-[#0d52b7] text-[#0d52b7] bg-white hover:bg-blue-50 text-xs font-semibold rounded shadow-sm transition-colors" type="button">Validate</button>  <button class="px-4 py-2 bg-[#0d52b7] hover:bg-[#0b4599] text-white text-xs font-semibold rounded shadow-sm transition-colors" type="button">View Packet Overview</button></div></section>
+<!-- BEGIN: Application Content Grid -->
+<div class="mt-6 grid grid-cols-12 gap-6 items-start" data-purpose="two-column-form-container">
+<!-- BEGIN: Left Rail Stepper Navigation -->
+<div class="col-span-12 lg:col-span-3 bg-white rounded-lg border border-gray-200 shadow-sm p-4" data-purpose="application-sections-nav">
+<h2 class="text-sm font-bold text-gray-900 mb-3 px-1">Application Sections</h2>
+<ul class="space-y-1 text-sm font-medium">
+<!-- Step 1: Organization Information (Active) -->
+<li class="">
+<a class="flex items-center justify-between p-2.5 rounded-md bg-[#eef4ff] text-[#0d6efd] border border-blue-100 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-[#0d6efd] text-white flex items-center justify-center text-xs font-bold">
+                    1
+                  </span>
+<div>
+<span class="font-semibold block text-slate-900 leading-tight">Organization Information</span>
+<span class="text-[11px] text-blue-700 font-medium">In Progress</span>
+</div>
+</div>
+<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</a>
+</li>
+<!-- Step 2: Contact Information -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    2
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Contact Information</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+<!-- Step 3: Program Information -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    3
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Program Information</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+<!-- Step 4: Eligibility -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    4
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Eligibility</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+<!-- Step 5: Certifications & Assurances -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    5
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Certifications &amp; Assurances</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+<!-- Step 6: Additional Information -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    6
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Additional Information</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+<!-- Step 7: Review & Submit -->
+<li class="">
+<a class="flex items-center p-2.5 rounded-md text-gray-600 hover:bg-gray-50 transition-colors" href="#">
+<div class="flex items-center space-x-3">
+<span class="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold border border-gray-200">
+                    7
+                  </span>
+<div>
+<span class="font-medium block text-slate-700 leading-tight">Review &amp; Submit</span>
+<span class="text-[11px] text-gray-400">Not Started</span>
+</div>
+</div>
+</a>
+</li>
+</ul>
+</div>
+<!-- END: Left Rail Stepper Navigation -->
+<!-- BEGIN: Center/Right Form Card -->
+<div class="col-span-12 lg:col-span-9 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" data-purpose="form-main-card">
+<!-- Card Header Info -->
+<div class="p-6 border-b border-gray-200">
+<div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+<div>
+<h2 class="text-lg font-bold text-slate-900">1. Organization Information</h2>
+<p class="text-xs text-slate-500 mt-0.5">Please provide your organization details.</p>
+</div>
+<span class="text-xs font-medium text-red-600">* Indicates required field</span>
+</div>
+</div>
+<!-- Form Fields Container -->
+<form class="p-6 space-y-7" data-purpose="organization-details-form" onsubmit="event.preventDefault();">
+<!-- SUBSECTION: Organization Details -->
+<div>
+<h3 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-4">Organization Details</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Sponsor / Agency Type -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="sponsorType">
+                    Sponsor / Agency Type <span class="text-red-600 font-bold">*</span>
+</label>
+<select class="form-control-input custom-select font-medium text-slate-800" id="sponsorType">
+<option selected="">School District</option>
+<option>Private Non-Profit</option>
+<option>Charter School</option>
+<option>Government Agency</option>
+</select>
+</div>
+<!-- Organization Name -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="orgName">
+                    Organization Name <span class="text-red-600 font-bold">*</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="orgName" type="text" value="ABC School District">
+</div>
+</div>
+<!-- Row 2: FEIN, DUNS / UEI, Congressional District -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+<!-- FEIN -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="fein">
+                    FEIN <span class="text-red-600 font-bold">*</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="fein" type="text" value="12-3456789">
+</div>
+<!-- DUNS / UEI Number -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1" for="duns">
+<span class="">DUNS / UEI Number</span>
+<span class="inline-flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" title="Unique Entity Identifier">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="duns" type="text" value="987654321">
+</div>
+<!-- Congressional District -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="congDistrict">
+                    Congressional District
+                  </label>
+<select class="form-control-input custom-select text-slate-500 font-normal" id="congDistrict">
+<option selected="">Select...</option>
+<option value="1">District 1</option>
+<option value="2">District 2</option>
+<option value="3">District 3</option>
+<option value="4">District 4</option>
+</select>
+</div>
+</div>
+<!-- Row 3: Operational Dates & Fiscal Year -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+<!-- Operational Start Date -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="startDate">
+                    Operational Start Date <span class="text-red-600 font-bold">*</span>
+</label>
+<div class="relative">
+<input class="form-control-input pr-9 text-slate-800 font-medium" id="startDate" type="text" value="07/01/2026">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</span>
+</div>
+</div>
+<!-- Operational End Date -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="endDate">
+                    Operational End Date <span class="text-red-600 font-bold">*</span>
+</label>
+<div class="relative">
+<input class="form-control-input pr-9 text-slate-800 font-medium" id="endDate" type="text" value="06/30/2027">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</span>
+</div>
+</div>
+<!-- Fiscal Year Start Month -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="fiscalMonth">
+                    Fiscal Year Start Month <span class="text-red-600 font-bold">*</span>
+</label>
+<select class="form-control-input custom-select text-slate-800 font-medium" id="fiscalMonth">
+<option selected="">July</option>
+<option>January</option>
+<option>October</option>
+</select>
+</div>
+</div>
+</div>
+<!-- SUBSECTION: Primary Address -->
+<div class="pt-4 border-t border-gray-100">
+<h3 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-4">Primary Address</h3>
+<!-- Street Address & Address Line 2 -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="streetAddress">
+                    Street Address <span class="text-red-600 font-bold">*</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="streetAddress" type="text" value="123 Main Street">
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="address2">
+                    Address Line 2
+                  </label>
+<input class="form-control-input placeholder-slate-400 font-normal" id="address2" placeholder="(Optional)" type="text">
+</div>
+</div>
+<!-- City, State, ZIP -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+<!-- City -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="city">
+                    City <span class="text-red-600 font-bold">*</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="city" type="text" value="Des Moines">
+</div>
+<!-- State -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="state">
+                    State <span class="text-red-600 font-bold">*</span>
+</label>
+<select class="form-control-input custom-select text-slate-800 font-medium" id="state">
+<option selected="">Iowa</option>
+<option>Illinois</option>
+<option>Nebraska</option>
+<option>Minnesota</option>
+</select>
+</div>
+<!-- ZIP Code -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1" for="zip">
+                    ZIP Code <span class="text-red-600 font-bold">*</span>
+</label>
+<input class="form-control-input text-slate-800 font-medium" id="zip" type="text" value="50309">
+</div>
+</div>
+</div>
+<!-- BEGIN: Card Bottom Action Bar -->
+<div class="pt-5 mt-8 border-t border-gray-200 flex items-center justify-between" data-purpose="form-actions-footer"><button class="px-5 py-2 border border-gray-300 text-slate-700 bg-white hover:bg-gray-50 text-xs font-semibold rounded shadow-sm transition-colors" type="button">Cancel</button><div class="flex items-center space-x-3"><button class="inline-flex items-center px-4 py-2 border border-[#0d52b7] text-[#0d52b7] bg-white hover:bg-blue-50 text-xs font-semibold rounded shadow-sm transition-colors" type="button"><svg class="w-4 h-4 mr-1.5 text-[#0d52b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>Save Draft</button><button class="inline-flex items-center px-5 py-2 bg-[#0d52b7] hover:bg-[#0b4599] text-white text-xs font-semibold rounded shadow-sm transition-colors" type="button">Save &amp; Continue<svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button></div></div>
+<!-- END: Card Bottom Action Bar -->
+</form>
+</div>
+<!-- END: Center/Right Form Card -->
+</div>
+<!-- END: Application Content Grid -->
+</main>
+<!-- END: Main Page Content -->
+</div>
+<!-- END: Main Outer Wrapper -->
+
+
+
+
+
+
+</body></html>

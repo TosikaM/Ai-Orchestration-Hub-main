@@ -1,0 +1,414 @@
+# Continuous integration for the Orchestrator Hub.
+#
+# WHAT THIS FILE IS DEFENDING
+#
+# The hub is an automatic distribution channel: content merged here is loaded into other
+# people's sessions without anybody reading it first. There is no staging step between a
+# merge and a colleague's next prompt. That is why the gates below are cheap syntax and
+# consistency checks rather than a test suite — the failure mode this repository actually
+# has is not a subtle logic bug, it is a file that is malformed, stale, unreachable, or
+# quietly forked from the source it was generated from.
+#
+# Each job runs independently so a broken hook handler does not hide a stale generated
+# file. A single job that stops at the first failure teaches contributors to fix one
+# thing, push, and wait, one round trip per problem.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only by default. Nothing in this workflow writes to the repository, and a token
+# that cannot write is one fewer thing to reason about when a third-party action updates.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------- content plane
+  # The Markdown brain. The order of the steps below is deliberate: freshness first,
+  # then measurement, then the ceilings, then structure. Running validate-structure.py
+  # against stale generated content produces failures that describe the wrong problem,
+  # and a contributor who chases those learns to distrust the validator.
+  validate-content:
+    name: Content plane (generation, budget, structure)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Generated content is in sync with content-src/
+        run: python scripts/gen-content.py --check
+
+      - name: Discovery budget is freshly measured
+        run: python scripts/measure-discovery-budget.py --check
+
+      - name: Context budgets are within their ceilings
+        run: python scripts/context-bill.py --budget
+
+      - name: Structure, wiring, and manifest validation
+        run: python scripts/validate-structure.py
+
+      # The redaction taxonomy is a list of regular expressions applied to text on its
+      # way out of the machine. A pattern that backtracks catastrophically does not fail
+      # loudly — it hangs the egress path, and the natural workaround is to disable
+      # redaction. --lint checks the patterns themselves rather than their output.
+      - name: Redaction taxonomy is free of catastrophic backtracking
+        run: python scripts/redact.py --lint
+
+      - name: Audit our own agent surface
+        run: python scripts/audit-agent-surface.py
+
+  # ---------------------------------------------------------------- runtime plane
+  # A syntax gate, and it is honest about being only that: there is no test harness for
+  # the hook runtime yet. It still earns its place, because a hook that will not parse
+  # does not announce itself. Claude Code runs the handler, node exits non-zero with a
+  # SyntaxError on stderr, the hook contributes no decision, and the session continues
+  # exactly as if the gate had allowed the action. A hook that cannot parse is a hook
+  # that silently no-ops, which is the worst possible failure for a safety gate: the
+  # protection is gone and the reassurance remains.
+  hook-runtime:
+    name: Runtime plane (hook syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Parse every runtime JavaScript file
+        run: |
+          set -euo pipefail
+          files=$(find hooks/runtime lib -type f -name '*.js' | sort)
+          # A loop over an empty list exits 0 and looks exactly like a pass. If the
+          # layout moves and this find stops matching, the gate must fail rather than
+          # report success over nothing.
+          if [ -z "$files" ]; then
+            echo "No .js files found under hooks/runtime/ or lib/ — the search paths are wrong."
+            exit 1
+          fi
+          status=0
+          count=0
+          while IFS= read -r file; do
+            count=$((count + 1))
+            # node --check prints the SyntaxError to stderr and exits non-zero. The loop
+            # keeps going rather than stopping at the first failure, so one push shows
+            # every broken file instead of one round trip per file.
+            if node --check "$file"; then
+              echo "  ok    $file"
+            else
+              echo "  FAIL  $file"
+              status=1
+            fi
+          done <<< "$files"
+          echo ""
+          echo "$count file(s) parsed."
+          exit $status
+
+      # Windows PowerShell 5.1 — the default shell on our primary platform — reads a
+      # .ps1 file WITHOUT a byte-order mark as Windows-1252, not UTF-8. This repository
+      # uses em-dashes throughout, and an em-dash is UTF-8 E2 80 94. Read as ANSI, that
+      # last byte becomes U+201D, a right double quotation mark, which PowerShell treats
+      # as a string delimiter.
+      #
+      # The failure is genuinely nasty: the parser reports "the string is missing the
+      # terminator" and "missing closing '}'" pointing at lines far from the em-dash, and
+      # only in scripts where an em-dash happens to sit inside a double-quoted string —
+      # so the same character is harmless in a comment and fatal ten lines later. It also
+      # cannot reproduce on Linux or in PowerShell 7, which is where people debug it.
+      #
+      # A BOM costs three bytes and removes the entire class.
+      - name: PowerShell scripts carry a UTF-8 BOM
+        run: |
+          set -euo pipefail
+          missing=""
+          count=0
+          while IFS= read -r file; do
+            count=$((count + 1))
+            # 0xEF 0xBB 0xBF
+            if [ "$(head -c 3 "$file" | od -An -tx1 | tr -d ' \n')" != "efbbbf" ]; then
+              missing="$missing $file"
+            fi
+          done <<< "$(find scripts -name '*.ps1' | sort)"
+
+          if [ "$count" -eq 0 ]; then
+            echo "No .ps1 files found under scripts/ — the search path is wrong."
+            exit 1
+          fi
+          if [ -n "$missing" ]; then
+            echo "These PowerShell scripts have no UTF-8 BOM:"
+            for f in $missing; do echo "  $f"; done
+            echo ""
+            echo "Windows PowerShell 5.1 will read them as Windows-1252 and any em-dash"
+            echo "inside a double-quoted string will break parsing with a misleading error."
+            echo "Re-save with a BOM, or run:"
+            echo '  Get-ChildItem scripts -Filter *.ps1 | ForEach-Object {'
+            echo '    $t = [IO.File]::ReadAllText($_.FullName)'
+            echo '    [IO.File]::WriteAllText($_.FullName, $t, (New-Object Text.UTF8Encoding $true)) }'
+            exit 1
+          fi
+          echo "$count PowerShell script(s) carry a UTF-8 BOM."
+
+  # ---------------------------------------------------------------- neutrality
+  # Golden rule G4: the only sanctioned homes for an organization-identifying string are
+  # hub.config.json and overlays/. Everything else must be reusable by another team
+  # without a find-and-replace.
+  org-neutrality:
+    name: Organization neutrality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: No foreign organization strings outside the sanctioned files
+        run: |
+          set -euo pipefail
+
+          # The pattern is READ OUT OF the validator rather than repeated here. Two
+          # copies of a forbidden-string pattern is two gates that can disagree, and the
+          # one that drifts is always the one nobody runs locally. This also keeps the
+          # literal out of this file, so the workflow does not have to be exempted from
+          # the rule it enforces.
+          pattern=$(python - <<'PY'
+          import pathlib, re, sys
+          source = pathlib.Path("scripts/validate-structure.py").read_text(encoding="utf-8")
+          match = re.search(r'FORBIDDEN_ORG_PATTERN\s*=\s*re\.compile\(\s*r"([^"]+)"', source)
+          if not match:
+              sys.exit("could not read FORBIDDEN_ORG_PATTERN out of scripts/validate-structure.py")
+          print(match.group(1))
+          PY
+          )
+          echo "Pattern sourced from scripts/validate-structure.py."
+
+          # These five --exclude entries mirror ORG_SCAN_EXCLUDE_FILES in
+          # scripts/validate-structure.py exactly. Each is a file that legitimately
+          # contains the pattern because it IS the detector or because it documents what
+          # was removed; without them the gate fails on itself. The list is pinned there
+          # by check_org_exclusions_unchanged against ORG_SCAN_EXCLUDE_FILES_PIN, so it
+          # cannot quietly grow: adding a sixth exemption requires editing the pin in the
+          # same commit, which makes the exemption a reviewable line in the diff instead
+          # of a one-word change nobody notices. Like the validator, these match on the
+          # file's basename, not its full path.
+          #
+          # If you add an entry here, add it there and move the pin. A neutrality gate
+          # whose escape hatch is easier to widen than the rule is not a gate.
+          if grep -rIn --extended-regexp --ignore-case \
+               --exclude-dir=.git \
+               --exclude-dir=node_modules \
+               --exclude-dir=out \
+               --exclude-dir=dist \
+               --exclude-dir=overlays \
+               --exclude-dir=__pycache__ \
+               --exclude-dir=.venv \
+               --exclude-dir=runs \
+               --exclude-dir=inbox \
+               --exclude-dir=extracted \
+               --exclude=validate-structure.py \
+               --exclude=audit.ps1 \
+               --exclude=ci.yml \
+               --exclude=AI-ORCHESTRATOR-MASTER-BLUEPRINT.md \
+               --exclude=hub.config.json \
+               --include='*.ts' --include='*.js' --include='*.json' \
+               --include='*.yml' --include='*.yaml' --include='*.md' \
+               --include='*.py' --include='*.ps1' --include='*.tmpl' \
+               -e "$pattern" . ; then
+            echo ""
+            echo "A foreign organization string appears above, outside hub.config.json and overlays/."
+            echo "Org identity belongs in hub.config.json (read it through lib/config.js or"
+            echo "scripts/_lib.py) or in an overlay under overlays/. Nothing else should name a"
+            echo "customer, because everything else is meant to be reusable as-is."
+            exit 1
+          fi
+          echo "Clean: no foreign organization strings outside the sanctioned files."
+
+  # ---------------------------------------------------------------- view plane
+  # Which planes did this change touch? The view plane compile is the slowest job here
+  # and the least often relevant, because most changes in this repository are Markdown.
+  # Computing the answer once in git, rather than reaching for a third-party filter
+  # action, keeps the dependency surface of CI to the four first-party actions.
+  detect-changes:
+    name: Detect changed planes
+    runs-on: ubuntu-latest
+    outputs:
+      view: ${{ steps.filter.outputs.view }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The full history: a shallow clone has no merge base to diff against, and the
+          # diff would silently come back empty — which reads as "nothing changed".
+          fetch-depth: 0
+
+      - id: filter
+        name: Compare against the merge base
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+          else
+            base="${{ github.event.before }}"
+          fi
+
+          # When the base is unknown — a new branch's first push reports an all-zero
+          # SHA, and a force-push can leave a commit that is no longer reachable — we
+          # cannot compute a diff. Run the job. A compile that ran unnecessarily costs a
+          # minute; a compile that was skipped because the comparison quietly failed is
+          # a broken extension merged on a green check.
+          if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "Base commit unavailable — running every plane rather than guessing."
+            echo "view=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only "$base" HEAD)
+          echo "Changed files:"
+          echo "$changed" | sed 's/^/  /'
+
+          # This workflow file counts as a change to every plane it gates. Editing the
+          # compile step and skipping the compile is how a broken gate ships green.
+          if echo "$changed" | grep -qE '^(view/|\.github/workflows/ci\.yml$)'; then
+            echo "view=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "view=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The view plane is a slim VS Code extension that reads state files and owns no
+  # orchestration. It still has to compile: a TypeScript error here means the status bar
+  # and the tree views are absent in the editor, and the person affected has no way to
+  # tell that from "the orchestrator has nothing to show right now".
+  view-plane:
+    name: View plane (compile)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.view == 'true'
+    runs-on: ubuntu-latest
+    # No continue-on-error. A view plane that does not build is a broken install for
+    # everyone who has the extension, and a warning in a log nobody reads is not a gate.
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: view/package-lock.json
+
+      # `npm ci` rather than `npm install`: it installs exactly the lockfile and fails if
+      # package.json and the lockfile disagree, so CI compiles the dependency tree a
+      # developer actually has instead of resolving a fresh one of its own.
+      - name: Install view plane dependencies
+        working-directory: view
+        run: npm ci
+
+      - name: Compile the view plane
+        working-directory: view
+        run: npm run compile
+
+  # ---------------------------------------------------------------- gate evals
+  # evals/evals.json splits its cases into two tiers, and the split is a written rule
+  # rather than a preference: a safety guardrail or a deterministic functional test is
+  # `gate`; a quality benchmark, a non-deterministic judgement, or anything needing a
+  # fixture repo is `periodic`. Gate blocks a merge. Periodic runs weekly in
+  # evals-periodic.yml.
+  #
+  # Without this job that claim was decoration. The tier field said "blocks a merge" and
+  # nothing in CI ran a single case — which is precisely the shape of defect this
+  # repository was built to eliminate: a documented guarantee with no executor behind it.
+  #
+  # Note which cases landed in `gate`: every grounding case, both security cases, both
+  # restraint pairs, the credential-replication case and the injection case. That is the
+  # classification rule doing its job — the things the architecture claims as guarantees
+  # are exactly the things that now stop a merge.
+  evals-gate:
+    name: Gate evals
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The runner selects cases by diffing against the base, so it needs a base to
+          # diff against. A shallow clone yields an empty diff, which selects nothing and
+          # reports green over zero cases.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # A pull request from a fork cannot read repository secrets. That is a platform
+      # rule, not something to work around — exposing an API key to code a stranger
+      # wrote is the whole reason the restriction exists.
+      #
+      # So the job reports HONESTLY rather than green: it states that the gate tier did
+      # not run and that a maintainer must run it before merging. It does not fail,
+      # because failing every fork contribution on a condition the contributor cannot
+      # satisfy teaches people to ignore a red check. It does not pass silently either,
+      # because a skipped safety gate reported as a pass is the exact failure this
+      # repository refuses everywhere else.
+      - name: Determine whether secrets are reachable
+        id: secrets
+        env:
+          KEY_PRESENT: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        run: |
+          set -euo pipefail
+          if [ "${KEY_PRESENT}" = "true" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Gate evals did NOT run"
+              echo ""
+              echo "\`ANTHROPIC_API_KEY\` was not readable from this run — normal for a"
+              echo "pull request from a fork, since secrets are withheld from untrusted code."
+              echo ""
+              echo "**This is not a pass.** A maintainer must run the gate tier against this"
+              echo "branch before merging:"
+              echo ""
+              echo '```'
+              echo "python evals/eval-runner.py --tier gate"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Gate evals not run::Secrets unavailable. A maintainer must run the gate tier before merging."
+          fi
+
+      - name: Install the Claude Code CLI
+        if: steps.secrets.outputs.available == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      # The runner's strict-output contract is the part that matters here: a case that
+      # produced no parseable verdict is recorded as FAILED, never as skipped and never
+      # as passed. A harness that crashes and reports green converts an unknown into a
+      # false assurance, which is worse than having no harness at all.
+      - name: Run the gate-tier evals
+        if: steps.secrets.outputs.available == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python evals/eval-runner.py --tier gate
+
+      # if: always() — the run record is most valuable precisely when the job failed.
+      - name: Upload the run record
+        if: always() && steps.secrets.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-run-gate
+          path: evals/runs/
+          if-no-files-found: warn

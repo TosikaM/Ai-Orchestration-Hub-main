@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestrator Enterprise Policy",
+  "description": "The policy model. Everything an organization, project, repository or environment is ALLOWED to do, expressed as data — so a customer-specific policy never requires a change to the platform. Resolved by scripts/policy.py, enforced by hooks/runtime/handlers/autonomy-gate.js.",
+  "type": "object",
+  "required": ["policyVersion", "defaults"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "policyVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "description": { "type": "string" },
+    "_resolution": { "type": "object" },
+
+    "defaults": { "$ref": "#/definitions/policyBlock" },
+    "organization": { "$ref": "#/definitions/policyBlock" },
+    "project": { "$ref": "#/definitions/policyBlock" },
+    "repository": { "$ref": "#/definitions/policyBlock" },
+    "environment": { "$ref": "#/definitions/policyBlock" }
+  },
+
+  "definitions": {
+    "policyBlock": {
+      "type": "object",
+      "description": "A layer. `defaults` should be complete; the narrower layers are partial and may only RESTRICT what a wider layer allows. scripts/policy.py refuses a widening rather than applying it.",
+      "properties": {
+        "autonomy": {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5,
+              "description": "0 explain · 1 suggest · 2 write · 3 write+test+correct · 4 open a PR · 5 deploy. The default ceiling is 3 because the blast-radius jump between 3 and 4 is far larger than between any other adjacent pair."
+            },
+            "maxLevelWithoutExplicitGrant": { "type": "integer", "minimum": 0, "maximum": 5 },
+            "grantRequiredAbove": { "type": "string" },
+            "rationale": { "type": "string" },
+            "enforcedBy": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "agents": {
+              "type": "object",
+              "description": "Per agent, because 'the orchestrator may deploy' and 'the reviewer may deploy' are different claims.",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "allow": { "type": "array", "items": { "type": "string" } },
+                  "deny": { "type": "array", "items": { "type": "string" } }
+                },
+                "additionalProperties": false
+              }
+            },
+            "capabilityDefinitions": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        },
+
+        "dataPolicy": {
+          "type": "object",
+          "description": "What may enter a prompt, what may leave the machine, and how long anything is kept.",
+          "properties": {
+            "sourceCodeMayLeaveEnvironment": { "type": "boolean" },
+            "sourceCodeEgressNote": { "type": "string" },
+            "productionDataInPrompts": { "enum": ["forbidden", "allowed", "redacted"] },
+            "customerPiiInPrompts": { "enum": ["forbidden", "allowed", "redacted"] },
+            "secretsInPrompts": { "enum": ["blocked-by-scanner", "forbidden", "allowed"] },
+            "scannerRef": { "type": "string" },
+            "promptRetentionDays": { "type": "integer", "minimum": 0 },
+            "responseRetentionDays": { "type": "integer", "minimum": 0 },
+            "retentionNote": { "type": "string" },
+            "telemetryLeavesEnvironment": { "type": "boolean" },
+            "forbiddenPathGlobs": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Out of bounds at EVERY autonomy level, including 5. Credential material is not a blast-radius question."
+            }
+          }
+        },
+
+        "qualityGate": {
+          "type": "object",
+          "description": "A conjunction, not a score. An AI review is one input and never the deciding one — a model grading work produced by the same family of model is not an independent check.",
+          "properties": {
+            "deterministic": { "type": "object" },
+            "aiAssessment": {
+              "type": "object",
+              "properties": {
+                "minimumScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "weight": { "type": "string" },
+                "note": { "type": "string" }
+              }
+            },
+            "humanReview": {
+              "type": "object",
+              "properties": {
+                "required": { "type": "boolean" },
+                "requiredAtLevels": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 5 } }
+              }
+            },
+            "rule": { "type": "string" }
+          }
+        },
+
+        "approvalPolicy": {
+          "type": "object",
+          "properties": {
+            "gates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "phase", "owner", "artifact", "question"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "phase": { "type": "string" },
+                  "owner": { "type": "string" },
+                  "artifact": { "type": "string", "description": "What the human actually reads. A gate with nothing attached trains people to click yes." },
+                  "question": { "type": "string" }
+                }
+              }
+            },
+            "enforcedBy": { "type": "string" },
+            "timeoutBehavior": {
+              "enum": ["wait-indefinitely"],
+              "description": "Deliberately the only permitted value. A gate that approves itself after an interval is not a gate."
+            },
+            "timeoutNote": { "type": "string" }
+          }
+        },
+
+        "memoryPolicy": {
+          "type": "object",
+          "properties": {
+            "states": { "type": "array", "items": { "type": "string" } },
+            "promotionRequiresHumanApproval": {
+              "type": "boolean",
+              "description": "Enable-only: a narrower layer may turn this on but never off."
+            },
+            "promotionCriteria": {
+              "type": "object",
+              "properties": {
+                "minimumConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "minimumRepos": { "type": "integer", "minimum": 1 },
+                "bothRequired": { "type": "boolean" }
+              }
+            },
+            "autoPromote": { "type": "boolean" },
+            "autoPromoteNote": { "type": "string" },
+            "writeGuards": { "type": "array", "items": { "type": "string" } },
+            "writeGuardsDisableable": {
+              "enum": [false],
+              "description": "Pinned false. There is intentionally no key that disables the redaction and injection scan on a memory write."
+            },
+            "readCaps": { "type": "object" }
+          }
+        },
+
+        "costLimits": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "currency": { "type": "string" },
+            "perSessionCeiling": { "type": ["number", "null"] },
+            "perStoryCeiling": { "type": ["number", "null"] },
+            "perRepoMonthlyCeiling": { "type": ["number", "null"] },
+            "onExceed": { "enum": ["warn-and-continue", "block-new-phases", "block-all"] },
+            "trackedBy": { "type": "string" }
+          }
+        },
+
+        "telemetry": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "scope": { "enum": ["local-only"] },
+            "network": { "enum": ["none"] },
+            "note": { "type": "string" },
+            "path": { "type": "string" }
+          }
+        },
+
+        "model": {
+          "type": "object",
+          "description": "Read by the headless path only. The interactive path uses the model the user's session is running and is deliberately not overridden.",
+          "properties": {
+            "default": { "type": "string" },
+            "routing": { "type": "object", "additionalProperties": { "type": "string" } },
+            "routingRationale": { "type": "string" },
+            "maxRetries": { "type": "integer", "minimum": 0 },
+            "backoff": { "type": "string" },
+            "timeoutSeconds": { "type": "integer", "minimum": 1 },
+            "fallback": {
+              "type": ["string", "null"],
+              "description": "Null by design. A result produced by a different model than the one recorded is unattributable, and the eval scores stop meaning anything."
+            },
+            "fallbackNote": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

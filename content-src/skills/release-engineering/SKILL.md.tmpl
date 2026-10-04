@@ -1,0 +1,66 @@
+---
+name: release-engineering
+description: Assesses release readiness, writes release notes and changelog entries, and gates on CI and migration risk.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]
+metadata:
+  version: 1.0.0
+  category: release
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** release, ship it, cut a version, release notes, changelog, rollout.
+**USE FOR:** readiness assessment and release documentation.
+**NOT FOR:** running the pre-PR gate — that is `verification-loop`. Feature docs — that
+is `/document`.
+
+## Readiness Gate
+
+A release is **blocked**, not warned, when any of these fail:
+
+- CI is red on the target branch
+- An unreviewed database or data migration is in the diff
+- A new dependency has an open advisory
+- A `verification-loop` phase was not run
+- An open security finding sits above the configured severity
+- A human gate on the pipeline is unanswered
+
+Report the blockers. Do not soften them, do not aggregate them into "some issues", and
+do not offer a workaround for a blocker in the same breath as reporting it.
+
+## Release Notes Rule
+
+Write **what a user can now do that they could not before.**
+
+Not the branch's internal history. Not the bugs found and fixed mid-branch — those were
+never in a release. Not the review rounds. If the diff has no user-facing change, the
+honest note is one sentence saying so, and that sentence is more useful than three
+paragraphs of internal narrative.
+
+## Version Discipline
+
+Read the current version **from the manifest**, never from memory. A version number
+recalled rather than read is a named hallucination mode and it is unusually costly here,
+because it propagates into tags, artifacts, and other people's lockfiles.
+
+Propose the bump level with a one-line justification tied to the actual scale of the diff.
+
+## Egress Note
+
+Release artifacts are published. Everything written here goes through the redaction
+scan first, and a HIGH-tier finding blocks the write. That is not configurable.
+
+## Output
+
+A readiness verdict (**GO** or **BLOCKED**, with reasons), release notes, a CHANGELOG
+entry, and a rollback note stating how to undo this release.
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{GROUNDING_CONTRACT}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

@@ -1,0 +1,66 @@
+# Code ownership for the Orchestrator Hub.
+#
+# Ownership here is not a hierarchy. It is a routing table for one question: who can tell
+# whether this particular change is safe? The paths below share a property that most of
+# the repository does not — a wrong edit to them is silent. A broken skill body produces
+# a visibly worse answer and somebody complains. A redaction pattern that stopped
+# matching, a hook that is no longer reachable from the manifest, a ceiling that is now a
+# string instead of a number: all of those produce a system that looks exactly like a
+# working one, until the day it does not.
+#
+# There is deliberately no `*` catch-all rule. A default owner on every path means the
+# same reviewer is requested on every pull request, including the ones they have no way
+# to judge, and a reviewer who is asked to approve everything learns to approve
+# everything. Ownership is worth something only where it is scarce.
+#
+# The rules below are checked by .github/workflows/governance.yml on any pull request
+# that touches a governed path, so an ownership rule cannot be deleted in the same
+# unreviewed change as the thing it protected. Whether an owner's approval is actually
+# required before merge is a branch protection setting — "Require review from Code
+# Owners" — which lives in repository settings and which no workflow in this repository
+# can enforce or verify. This file assigns the reviewer; the setting is what makes the
+# assignment binding.
+#
+# Last-match-wins: GitHub applies the LAST matching rule in this file, not the most
+# specific one. Order the entries from general to specific.
+
+# The behavioral configuration. These files are read at runtime and changing one changes
+# what the system does with no code edit and no release: the token ceilings, the pipeline
+# graph, the least-privilege tool registry, what counts as a secret on egress, and which
+# install profile a new repository gets.
+/config/                  @algoworks/ai-platform
+
+# The enforcement layer. A PreToolUse hook can deny a tool call outright, which is the
+# capability the whole architecture is built on; it is also the capability that, wrongly
+# tuned, blocks a colleague's legitimate work until they disable the gate and never turn
+# it back on.
+/hooks/                   @algoworks/ai-platform
+
+# The plugin manifest. This is the file that decides what Claude Code loads, which hooks
+# it wires up, and which minimum version is required. An error here is not a degraded
+# feature — it is an install that fails for everyone on the next marketplace update.
+/.claude-plugin/          @algoworks/ai-platform
+
+# The CLI surface and, more importantly, the validators. scripts/validate-structure.py
+# defines what "valid" means for everything else in this repository; a change that
+# weakens it weakens every other guarantee at once, and does so invisibly, because the
+# check that would have caught it is the check being edited.
+/scripts/                 @algoworks/ai-platform
+
+# The evidence that any of this works. Changing a case's tier from `gate` to `periodic`
+# moves it from blocking a merge to running on Monday. That is sometimes exactly right
+# and it is never a detail.
+/evals/                   @algoworks/ai-platform
+
+# The preamble is text that is generated INTO every agent and skill. The grounding
+# contract lives here, which means a change to one file in this directory rewrites the
+# rules every agent in the system operates under, in every connected repository, on the
+# next sync.
+/content-src/preamble/    @algoworks/ai-platform
+
+# Guard the guards. The two paths above that decide who reviews what, and what is checked
+# at all, need the same ownership as the mechanisms they protect — otherwise the cheapest
+# way to change a governed file without review is to first change the file that says
+# review is required.
+/.github/CODEOWNERS       @algoworks/ai-platform
+/.github/workflows/       @algoworks/ai-platform

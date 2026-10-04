@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Context Token Budgets",
+  "description": "Character ceilings for every context layer, plus the provenance block that keeps the discovery ceiling honest. This schema catches shape errors at edit time; scripts/validate-structure.py catches the semantic ones it cannot express — that every capped layer appears in the priority order, and that the recorded measurement still matches reality.",
+  "type": "object",
+  "required": ["version", "discovery", "eager", "priority"],
+  "additionalProperties": false,
+  "definitions": {
+    "ceiling": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Pinned to integer on purpose. A ceiling that becomes a string after a careless edit or a bad merge does not fail — the comparison either raises somewhere nobody is watching or silently stops comparing, and the budget looks enforced while enforcing nothing. Refusing the string here is cheaper than discovering it as an unexplained context overrun months later."
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bumped when the shape changes, not when a number changes. Readers use it to tell an old file from a new one."
+    },
+    "description": { "type": "string" },
+    "charsPerTokenEstimate": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "The planning ratio used to talk about these ceilings in tokens. It is an estimate and is labelled as one: real tokenization varies by content, so every ceiling in this file is expressed in characters, which can actually be measured."
+    },
+
+    "discovery": {
+      "type": "object",
+      "description": "The most expensive budget in the system, because it is the only one paid unconditionally — skill frontmatter is parsed and held in context in every session, in every repository, before the user types anything.",
+      "required": ["perSkillFrontmatterBytes", "aggregateFrontmatterBytes", "derivation"],
+      "additionalProperties": false,
+      "properties": {
+        "perSkillFrontmatterBytes": {
+          "allOf": [{ "$ref": "#/definitions/ceiling" }],
+          "description": "Per-skill cap on utf-8 bytes of name + description. Overflow is a signal that trigger text belongs in the SKILL.md '## Routing' body instead of in frontmatter."
+        },
+        "aggregateFrontmatterBytes": {
+          "allOf": [{ "$ref": "#/definitions/ceiling" }],
+          "description": "Cap on the sum across every skill. This is the number that grows quietly as skills are added, which is why it is ratcheted rather than merely documented."
+        },
+        "derivation": {
+          "type": "object",
+          "description": "Required, because a ceiling with no recorded measurement is a number somebody guessed. The block records how the measurement is taken, what it last read, and what a contributor must do when it moves.",
+          "required": ["method", "measuredValue", "measuredAt", "ratchetProtocol"],
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string",
+              "description": "How the number is produced, precisely enough to reproduce it, including the command that re-derives it."
+            },
+            "measuredValue": {
+              "type": ["integer", "null"],
+              "description": "The last measured aggregate footprint in bytes. Null is permitted here so an unmeasured file is still structurally valid and can be committed mid-change; validate-structure.py is what refuses to let it ship, and it also fails when this value has drifted from the real measurement."
+            },
+            "measuredAt": {
+              "type": ["string", "null"],
+              "description": "ISO-8601 timestamp of that measurement. A value without a date cannot be aged, and an un-ageable measurement eventually gets trusted long after it stopped being true."
+            },
+            "skillCount": { "type": ["integer", "null"], "minimum": 0 },
+            "dominantSkill": {
+              "type": ["string", "null"],
+              "description": "The single largest contributor at the time of measurement. It names where to look first when the aggregate moves."
+            },
+            "headroomPercent": { "type": ["number", "null"] },
+            "ratchetProtocol": {
+              "type": "string",
+              "description": "What a contributor does when the footprint changes — re-measure and update the recorded values in the SAME commit for real growth, fix the frontmatter for accidental growth, and re-measure after a reduction so the ceiling ratchets down and the win is locked in."
+            }
+          }
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "eager": {
+      "type": "object",
+      "description": "Layers assembled into the prompt before the model runs. The sum of the layer caps may legitimately exceed totalChars: allocation is greedy in priority order and trims the tail, so a large layer borrows headroom from layers that came in short instead of every layer shrinking uniformly and none being useful.",
+      "required": ["totalChars", "layers"],
+      "additionalProperties": false,
+      "properties": {
+        "totalChars": { "allOf": [{ "$ref": "#/definitions/ceiling" }] },
+        "layers": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Per-layer character caps, keyed by layer name. Every key here must also appear in `priority` — a layer with a cap and no priority entry is never sent to the model at all, which is a failure that looks exactly like the layer having nothing to say.",
+          "additionalProperties": { "$ref": "#/definitions/ceiling" }
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "priority": {
+      "type": "array",
+      "description": "Allocation order for eager.layers, most important first. This is the order in which the tail gets trimmed when the total is exceeded, so it encodes what the system is willing to lose.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+
+    "memoryRead": {
+      "type": "object",
+      "description": "Read-side caps on the memory store. Shared memory grows monotonically while the eager layers do not, so without a cap the digest truncates by recency alone — and recency degrades as a relevance proxy at exactly the moment the store becomes valuable.",
+      "additionalProperties": false,
+      "properties": {
+        "maxInjectedInstincts": { "type": "integer", "minimum": 0 },
+        "minConfidenceForInjection": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Floor below which an entry is not injected. Deliberately the same number as the promotion floor in memory/README.md — an entry is trusted enough to enter a prompt on exactly the evidence that makes it trusted enough to apply org-wide."
+        },
+        "maxInjectedDecisions": { "type": "integer", "minimum": 0 },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "sessionStart": {
+      "type": "object",
+      "description": "The session-start injection cap. This is the most easily-bloated always-on surface in the system: it is where 'we load context automatically' becomes 'we spend context before you type' without anyone deciding to.",
+      "additionalProperties": false,
+      "properties": {
+        "maxChars": { "allOf": [{ "$ref": "#/definitions/ceiling" }] },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "mcpSurface": {
+      "type": "object",
+      "description": "Caps on the MCP tool surface. Every tool description is always-on context competing for the same window as the discovery budget, so a file whose premise is that always-on cost is the expensive kind cannot leave MCP out of the accounting.",
+      "additionalProperties": false,
+      "properties": {
+        "maxDefaultConnectors": { "type": "integer", "minimum": 0 },
+        "maxToolsAcrossConnectors": { "type": "integer", "minimum": 0 },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "warnAtPercent": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Percentage of a ceiling at which the run warns. It exists so the first sign of an overrun is not the overrun itself."
+    },
+    "hardFail": {
+      "type": "boolean",
+      "description": "Whether exceeding the eager budget halts the run. False is the considered default: blowing the budget degrades answer quality, it is not a safety incident, and halting a user's work over a budget is a worse outcome than a trimmed prompt with an explicit truncation marker."
+    },
+    "hardFailRationale": { "type": "string" }
+  }
+}

@@ -1,0 +1,55 @@
+---
+name: research
+description: Research mode — investigation and hypothesis, confidence-tagged. No edits.
+---
+
+# Research Mode
+
+> Activated by `/mode research`. No code edits in research mode, and no recommendation
+> without a cited basis.
+
+## Research Process
+
+1. **Restate the question.** In your words, in one sentence. If the restatement is hard
+   to write, the question is not yet answerable and that is the first finding.
+2. **Explore in parallel.** Several searches at once, not a serial walk.
+3. **Form a hypothesis** and mark it 🟡.
+4. **Verify it** and promote to 🟢, or fail to verify it and say so.
+5. **Summarize with citations.**
+
+Step 4 is the one that gets skipped. A hypothesis that reads well starts to feel like a
+finding somewhere around the third paragraph.
+
+{{CONFIDENCE_TAXONOMY}}
+
+{{EVIDENCE_DIRECTIVE}}
+
+## Tools To Favor
+
+- Parallel exploration over a serial walk
+- Regex alternation (`foo|bar|baz`) over three separate greps
+- Wide read ranges once the target is narrowed — re-reading a file in four slices costs
+  more than reading it once
+- Semantic search, which is genuinely useful here and genuinely wrong in dev mode
+
+## Output Format
+
+```
+Question:    <restated>
+Answer:      <the short version, first>
+Evidence:    <🟢 claims, each with file:line>
+Inferences:  <🟡 claims, each with the chain>
+Unverified:  <🔴 claims, each with what would confirm it>
+Not examined: <scope you did not cover>
+```
+
+The short answer goes first. A research summary that makes the reader assemble the
+conclusion from the evidence has moved the work rather than done it.
+
+## Skip
+
+- Code edits. This is research mode.
+- Recommendations with no cited basis.
+- Exhaustive surveys of options you are not going to recommend.
+
+{{GROUNDING_CONTRACT}}

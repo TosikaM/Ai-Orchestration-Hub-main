@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stack Mappings",
+  "description": "Maps the indicator files found in a repository to the skills, agents, templates and candidate commands appropriate to it. This is the file that decides what a repository looks like to the orchestrator, which makes a wrong entry here a wrong assumption applied to everything downstream.",
+  "type": "object",
+  "required": ["stacks", "detectionOrder"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+
+    "stacks": {
+      "type": "array",
+      "description": "The known stacks. Order here is presentation order only — detection order is declared separately and is the one that matters.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "indicators", "skills", "agents"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Stable identifier, referenced by detectionOrder and recorded in a repository's generated context. Renaming one silently unmaps every repository already detected as it."
+          },
+          "name": { "type": "string", "description": "Human-readable label used in output." },
+          "indicators": {
+            "type": "array",
+            "description": "Evidence that a repository is this stack. An empty array marks a fallback that matches nothing and is only reachable as the last entry in detectionOrder.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "anyOf": [
+                { "required": ["file"] },
+                { "required": ["directory"] }
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "description": "Filename or glob that must exist, relative to the repository root."
+                },
+                "directory": {
+                  "type": "string",
+                  "description": "Directory that must exist. Weaker evidence than a file with a `contains` clause — a folder named Commands is a convention, not a dependency."
+                },
+                "contains": {
+                  "type": "string",
+                  "description": "Substring that must appear inside the matched file. This is what separates 'has a package.json' from 'actually depends on this framework', and it is the difference between a detection and a guess."
+                }
+              }
+            }
+          },
+          "templates": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Template families under templates/ that apply to this stack."
+          },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Skills made available when this stack is detected. Each must name a folder under skills/."
+          },
+          "agents": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Agents relevant to this stack. Each must be a declared agent."
+          },
+          "commands": {
+            "type": "object",
+            "description": "Candidate commands per verb, in the order they should be attempted. These are candidates, not facts: verification-loop runs them and reports which one actually worked, because a build command asserted from a file pattern and never executed is exactly the kind of plausible-sounding claim the grounding contract exists to stop.",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "conventions": {
+            "type": "object",
+            "description": "Observed conventions for this stack — naming, test layout, state management. Free-form keys because the interesting convention differs per ecosystem, and forcing a fixed vocabulary would mean recording the wrong fact in the right field.",
+            "additionalProperties": { "type": "string" }
+          },
+          "forbiddenCommands": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Commands that must never run from an agent context, typically state-mutating infrastructure operations. Declaring them here is documentation; the destructive-gate hook is what enforces it, and prose in a config file has never stopped anything."
+          },
+          "forbiddenCommandsReason": {
+            "type": "string",
+            "description": "Why those commands are forbidden, so the rule survives the person who wrote it."
+          }
+        }
+      }
+    },
+
+    "detectionOrder": {
+      "type": "array",
+      "description": "Stack ids in the order they are tested, and the order is load-bearing: it runs most-specific-first. A Next.js repository also declares a react dependency, so testing react first would classify every Next.js repository as plain React and silently lose its routing conventions and build commands. The same applies to a .NET CQRS project, which is also a .NET shared library by indicator. The last entry should be the catch-all, which is the only honest answer when nothing matched.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+
+    "verifiedCommandsRule": {
+      "type": "string",
+      "description": "What to do when no candidate command works — ask once, persist the answer in the consumer repo's context file, and never overwrite that section on regeneration. A one-time question that persists beats a permanent 'not detected'."
+    }
+  }
+}

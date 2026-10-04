@@ -1,0 +1,30 @@
+---
+description: Move a verified change from working tree to pull request — branch, commit, push, PR.
+argument-hint: "[status|branch|commit|pr|checks]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# Git
+
+Take a verified change through git using the `git-workflow` skill.
+
+## Skill Loaded
+**Required:** Read `skills/git-workflow/SKILL.md` and `commands/git.md`.
+
+## Usage
+```
+/git status
+/git branch --task "add ImpactInvestment to the donation form"
+/git pr --title "Add ImpactInvestment to the donation flow"
+```
+
+## Output
+The branch, the commit sha and the pull-request URL — or, below autonomy level 4, those
+same artifacts handed to a human to execute.
+
+## Notes
+Branch and commit need level 2; push and PR need level 4. There is no merge step at any
+level: merging is the last place a person is still required to look.

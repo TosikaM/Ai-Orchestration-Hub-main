@@ -1,0 +1,30 @@
+---
+description: Run the full SDLC pipeline from requirement to pull request.
+argument-hint: "<the requirement, in plain language>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-004, eval-005, eval-014]
+---
+
+# SDLC Start
+
+Run the full pipeline using the `sdlc-orchestrator` skill.
+
+## Skill Loaded
+**Required:** Read `skills/sdlc-orchestrator/SKILL.md` and `commands/sdlc-start.md`.
+Follow that protocol exactly — this file does not restate it.
+
+## Usage
+```
+/sdlc-start add an ImpactInvestment field to the donation form
+/sdlc-start migrate the reports endpoint to cursor pagination
+```
+
+## Output
+- A resumable checkpoint at `memory/sessions/<pipelineId>.checkpoint.json`
+- A gate artifact at each human-gated phase
+- The verified change
+
+## Notes
+Phases with a human gate stop and wait. The agent cannot clear its own gate.

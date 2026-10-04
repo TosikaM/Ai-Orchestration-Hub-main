@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Tool Registry",
+  "description": "Which MCP tools agents may reach for, which composed chains are worth preferring over ad-hoc tool use, and what happens when a connector is unavailable. Held in config rather than inlined into agent files so an organization can change its MCP fleet without editing agent prose, and so no org-specific tool name leaks into a shared agent file.",
+  "type": "object",
+  "required": ["defaults", "toolGlobs"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+
+    "defaults": {
+      "type": "object",
+      "description": "What is on before anyone chooses anything. An empty enabledConnectors list is the deliberate default: every MCP tool description is always-on context competing with the discovery budget for the same window, so a connector should be switched on by a person who wants it, not inherited by everyone who installed the plugin.",
+      "required": ["enabledConnectors"],
+      "additionalProperties": false,
+      "properties": {
+        "enabledConnectors": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Connectors enabled out of the box. The ceiling on how many may be enabled at once lives in config/token-budgets.json under mcpSurface."
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "toolGlobs": {
+      "type": "array",
+      "description": "Patterns for tool names an agent is permitted to call. A glob rather than an enumeration because MCP servers add tools between releases, and a list that has to be updated before a new tool can be used is a list that will be out of date exactly when it matters.",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+
+    "toolChains": {
+      "type": "object",
+      "description": "Named sequences that do a common job in a known-good order, keyed by chain name. The value of a chain is not that it is shorter — it is that it fixes the order, and the wrong order is where the cost goes: opening candidate files one at a time before searching, or editing five files before finding out the first one broke the build.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["sequence", "useWhen"],
+        "additionalProperties": false,
+        "properties": {
+          "sequence": {
+            "type": "array",
+            "description": "Tools in the order they should be called.",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "useWhen": {
+            "type": "string",
+            "description": "The situation this chain is for, stated concretely enough to pick between chains without reading all of them."
+          },
+          "budgetPerStep": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Character budget for each step's output. A chain with no per-step ceiling spends the whole window on step one when step one happens to match a large file."
+          },
+          "savesVersus": {
+            "type": "string",
+            "description": "The worse approach this chain replaces. Written as the concrete alternative rather than as a saving, because the alternative is checkable and a percentage would be invented."
+          }
+        }
+      }
+    },
+
+    "optional": {
+      "type": "object",
+      "description": "Connectors that some agents want but none require, keyed by connector name. Every entry must declare a fallback: a system whose behaviour when a connector is missing is undefined does not degrade, it improvises, and improvising about a ticket number produces a ticket number that does not exist.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["glob", "fallback"],
+        "additionalProperties": false,
+        "properties": {
+          "glob": { "type": "string", "description": "Tool-name pattern this connector provides." },
+          "requiredBy": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Agents or skills that reach for this connector, so the blast radius of it being down is readable before it is down."
+          },
+          "fallback": {
+            "type": "string",
+            "description": "What to do instead when the connector is unavailable — and, as importantly, what not to claim. 'Emit the specs as files; do not claim they were executed' is a fallback; 'retry' is not."
+          },
+          "healthCheck": {
+            "type": "object",
+            "description": "A cheap probe used to decide whether the connector is answering.",
+            "required": ["probe"],
+            "additionalProperties": false,
+            "properties": {
+              "probe": { "type": "string" },
+              "timeoutMs": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "How long to wait before treating the connector as unavailable. Short on purpose: the point of the probe is to reach the fallback quickly, and a probe that waits as long as the real call has saved nothing."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "healthPolicy": {
+      "type": "object",
+      "description": "When a connector is treated as unhealthy and what happens then.",
+      "additionalProperties": false,
+      "properties": {
+        "markUnhealthyAfterFailures": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Consecutive failures before the connector is marked down. One is defensible here: the failure being detected is usually a timeout, and paying that timeout repeatedly to gather evidence costs more than the evidence is worth."
+        },
+        "recheckAfterSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How long a connector stays marked down before it is probed again. Without a recheck interval, a connector that recovered stays disabled for the life of the session."
+        },
+        "onUnhealthy": {
+          "type": "string",
+          "description": "The policy in words. Fail fast and take the declared fallback — a carefully specified fallback that is never reached because the caller keeps retrying a timeout is decoration."
+        },
+        "statePath": {
+          "type": "string",
+          "description": "Where health state is recorded. Machine-scoped rather than repo-scoped, so a terminal session, a CI job and the view plane agree about which connectors are down."
+        }
+      }
+    }
+  }
+}

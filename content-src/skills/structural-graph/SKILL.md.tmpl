@@ -1,0 +1,67 @@
+---
+name: structural-graph
+description: Builds and refreshes a cached symbol index so agents load a summary instead of re-reading source files.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: performance
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** graph, index, symbols, "who imports", "where is X defined", refresh the index.
+**USE FOR:** building or querying the symbol index; answering importer and blast-radius
+questions cheaply.
+**NOT FOR:** tracing a field through layers semantically — that is `repo-context-builder`.
+Verifying a claim — that is `grounding-guard`.
+
+> **Read-only by contract.** `allowed-tools` carries no `Edit` or `Write`. An index
+> builder that can modify the source it indexes is a source of drift rather than a
+> source of truth, and this is enforced by validation, not left as advice.
+
+## What It Produces
+
+| Artifact | Contents |
+|----------|----------|
+| `~/.orchestrator/cache/<repo-slug>/graph.json` | paths, exports, classes, functions, imports, symbol → file:line |
+| `field-trace-index.md` | for a band: the path a named field takes through every repo |
+
+Build and query:
+
+```
+python scripts/graph.py build                 # full index
+python scripts/graph.py find <symbol>         # where is it defined
+python scripts/graph.py importers <file>      # who depends on this
+python scripts/graph.py summary               # the ~2K-token digest
+```
+
+## Invalidation
+
+A `PostToolUse` marker flags the cache stale after an edit. A stale cache is **rebuilt
+on next read, never served**. Serving a stale index is worse than having none, because
+the answer looks authoritative.
+
+## The One Rule
+
+**Never assert a symbol the index does not contain.** If the index has `UserService` but
+not `UserService.validateCredentialsAsync`, the answer is: the class is at `file:line`,
+that method does not appear, here are the methods that do. Not a plausible location.
+
+A real class with a method it does not have is the most convincing kind of wrong answer,
+because everything around it checks out.
+
+## Always Report Index Health
+
+`graph: 1,284 symbols across 213 files, built 6m ago`. Stated as a fact, not a caveat.
+A caller relying on a four-hour-old index across a large refactor needs to know.
+
+The index is lexical, not semantic. It answers "does this symbol exist and who
+references it". It does not answer "does this function do what its name says".
+
+{{GROUNDING_CONTRACT}}
+
+{{TOKEN_DISCIPLINE}}
+
+{{LESSONS_LEARNED}}

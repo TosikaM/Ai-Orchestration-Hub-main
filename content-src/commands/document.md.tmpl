@@ -1,0 +1,28 @@
+---
+description: Generate documentation, release notes, and changelog entries from what the pipeline produced.
+argument-hint: "[pipelineId]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# Document
+
+Produce documentation using the `sdlc-orchestrator` skill.
+
+## Skill Loaded
+**Required:** Read `skills/sdlc-orchestrator/SKILL.md` and `commands/document.md`.
+
+## Usage
+```
+/document
+/document pipe-m8x2k1
+```
+
+## Output
+Updated README and CHANGELOG, a documentation page when a connector is configured, and
+release notes.
+
+## Notes
+Never invent a ticket number, a version, or a contributor name. Omit what you cannot verify.

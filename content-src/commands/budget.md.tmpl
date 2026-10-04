@@ -1,0 +1,29 @@
+---
+description: Measure the context bill and produce a ranked list of concrete token reductions.
+argument-hint: "[--diff]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-008]
+---
+
+# Budget
+
+Audit and remediate using the `context-budget` skill.
+
+## Skill Loaded
+**Required:** Read `skills/context-budget/SKILL.md` and `commands/budget.md`.
+
+## Usage
+```
+/budget
+/budget --diff
+```
+
+## Output
+The bill — always-on and per-invocation, labeled as an estimate — and a ranked
+remediation list with a specific edit for each item.
+
+## Notes
+Step 1 is measurement, not analysis. An audit that opens with an opinion instead of a
+number is a review.

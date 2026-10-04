@@ -1,0 +1,262 @@
+# =============================================================================
+#  Connected repositories — the committed declaration
+# =============================================================================
+#
+#  WHAT THIS FILE IS, AND WHAT IT IS NOT
+#  -------------------------------------
+#  There are two registries and they answer different questions.
+#
+#  The live one is `~/.orchestrator/state/connected-repos.json`. It is machine-scoped,
+#  written by `scripts/cross-repo.py connect | switch | group`, and it answers "which
+#  repo is active on THIS machine right now". It lives outside every repository on
+#  purpose, so a terminal session, a CI job, and the view plane all read the same
+#  bytes instead of asking a running editor.
+#
+#  This file is the other one: committed, hand-edited at least as often as it is
+#  tool-edited, and it answers "which repositories does this hub claim, and in what
+#  order do they build". It survives a laptop reimage and it shows up in code review,
+#  which the live JSON never does.
+#
+#  HONEST LIMIT — READ THIS BEFORE YOU RELY ON IT
+#  ----------------------------------------------
+#  Nothing reconciles the two automatically today. `cross-repo.py` reads and writes
+#  the JSON state exclusively; the only thing that touches this file is
+#  `validate-structure.py`, which checks that it exists and parses. So an entry added
+#  here does not appear in `cross-repo.py list` until someone runs `connect` for that
+#  path, and a repo connected on a laptop does not appear here until someone writes it
+#  down. That is a real gap, not a subtlety — treat this file as the declaration of
+#  intent that a human reconciles, and say so rather than implying a sync that does
+#  not exist.
+#
+#  The comments below ARE the schema. There is no separate document for the fields,
+#  because a schema kept somewhere else is a schema that drifts from the file it
+#  describes.
+# =============================================================================
+
+# Matches `hub.version` in hub.config.json. When the two disagree, the hub config wins
+# and this number is stale — it is here so a registry written by an older hub is
+# recognizable as such rather than silently misread by a newer one.
+registryVersion: 3.1.0
+
+# -----------------------------------------------------------------------------
+#  The hub, registered as a repository
+# -----------------------------------------------------------------------------
+#  The hub is itself a git repository that gets edited, reviewed, and occasionally
+#  put in a band alongside the repos it orchestrates. Registering it here means
+#  `switch`, `group`, and band membership can reason about it with the same code path
+#  as everything else. The alternative — a special case for "the hub" in every
+#  command — is where the drift starts: five commands, five slightly different ideas
+#  of what the hub is.
+#
+#  `path` is deliberately the relative marker `.` rather than an absolute path. The
+#  absolute location already exists exactly once, as `hub.buildRoot` in
+#  hub.config.json, and duplicating it here would create the second copy that design
+#  principle P6 exists to prevent.
+hub:
+  name: ai-orchestrator-hub
+  aliases: [hub, orchestrator, ai-orchestrator]
+  path: .
+  role: hub
+  techStack: mixed
+  framework: claude-code-plugin
+  architecture: plugin-and-scripts
+  contextFile: .github/orchestrator-context.md
+  memoryDir: memory/shared
+  status: active
+
+# =============================================================================
+#  REPO ENTRY — every field, and why it exists
+# =============================================================================
+#
+#  name           (string, required)
+#      The key everything else refers to: group membership, band execution order,
+#      `relatedRepos`, and the memory directory are all keyed by this string.
+#      `cross-repo.py connect` derives it from the folder name via `repo_slug`, so if
+#      you invent a prettier name here and later run `connect` on that path, you get
+#      two entries for one checkout and neither is wrong enough to be obviously wrong.
+#      Match the folder name unless you have a reason you can write down.
+#
+#  aliases        (list of strings, optional)
+#      What people actually call the repo in a prompt — "the API", "command-api",
+#      "orders". Without these, a request that names the repo the way the team names
+#      it resolves to nothing. The system will correctly answer "not found", which is
+#      the right behaviour and still a wasted turn. Aliases are cheap; add them.
+#
+#  path           (string or null, required for a live entry)
+#      Absolute path to the checkout. This is the field that makes a committed
+#      registry awkward, and the awkwardness is real: your teammate's checkout is
+#      somewhere else. Leave it null here when layouts differ across machines and let
+#      `connect` fill in the per-machine live state; set it only when every machine in
+#      the team genuinely uses the same layout.
+#
+#  org            (string, optional)
+#      The owning group, as a short neutral slug — `platform`, `internal`, `vendor`,
+#      `oss`. NOT a company name: golden rule G4 confines organization-identifying
+#      strings to hub.config.json and overlays/, and this file is neither.
+#
+#  techStack      (string, optional)
+#      One of the stack ids in config/stack-mappings.json. Prefer letting
+#      `connect` detect it — `cross-repo.py detect_stack` walks the same detection
+#      order every other component uses, so two parts of the system cannot end up
+#      disagreeing about what a repo is written in. Hand-set it only to correct a
+#      detection you have verified is wrong.
+#
+#  framework      (string, optional)
+#      What the detector cannot infer from file presence alone — "aspnet-core",
+#      "nextjs", "spring-boot". Free text, read by humans and by prompts.
+#
+#  architecture   (string, optional)
+#      The shape of the code: `cqrs`, `layered`, `modular-monolith`, `event-driven`.
+#      This one earns its place because it steers skill selection — a repo marked
+#      `cqrs` is why `cqrs-developer` applies and generic implementation guidance does
+#      not. Getting it wrong produces advice that is coherent and inapplicable, which
+#      is harder to spot than advice that is obviously wrong.
+#
+#  role           (string, optional)
+#      What the repo does in a band: `producer`, `consumer`, `both`, `library`, `hub`.
+#      Advisory. It documents intent; it does not compute the build order.
+#
+#  connectedDate  (ISO-8601 UTC string or null)
+#  lastSync       (ISO-8601 UTC string or null)
+#      Maintained by the tooling in the live JSON state. Here they record when the
+#      repo was brought into the fold and when its content last agreed with the hub.
+#      A `lastSync` far in the past on an `active` repo is the useful signal: it means
+#      the repo's context file has been describing a codebase that moved on.
+#
+#  contextFile    (string, optional)
+#      Where the repo's own context lives, normally `.github/orchestrator-context.md`.
+#      That file is generated by `scripts/context-gen.py` and refined by `/init`; the
+#      path is recorded per repo because a repo is free to keep it elsewhere.
+#
+#  memoryDir      (string, optional)
+#      Repo-scoped memory, normally `memory/repos/<name>/` under the hub. Kept
+#      separate from `memory/shared/` because a learning that is true of one codebase
+#      must not be replicated into every other one until it has been reinforced
+#      somewhere else — that promotion is what `scripts/memory.py promote` is for.
+#
+#  subscriptions  (list of strings, optional)
+#      Which hub content this repo pulls, by remote path. Under the plugin
+#      distribution model this list is short by design and usually empty: the plugin
+#      already carries the agents, skills, prompts, contexts, and hooks, so nothing
+#      needs copying. See sync/default-sync-config.json for the authoritative shape
+#      and for the one path that genuinely must land in the repo.
+#
+#  relatedRepos   (list of names, optional)
+#      Repos that share contracts with this one. Deliberately NOT the build order.
+#      "Related to" and "must be built before" are different claims, and a field that
+#      conflates them produces an ordering nobody trusts and everybody overrides.
+#      Build order is `executionOrder` on a group, below, and nowhere else.
+#
+#  status         (string: active | paused | archived)
+#      `paused` keeps the entry and its history but takes the repo out of band
+#      operations; `archived` means the checkout may no longer exist. Deleting an
+#      entry outright loses the memory association, so prefer a status change.
+#
+# -----------------------------------------------------------------------------
+#  Example — copy, edit, delete the comment. Nothing reads this block.
+# -----------------------------------------------------------------------------
+#  - name: command-api
+#    aliases: [api, commands, command-service]
+#    path: null
+#    org: platform
+#    techStack: dotnet
+#    framework: aspnet-core
+#    architecture: cqrs
+#    role: producer
+#    connectedDate: null
+#    lastSync: null
+#    contextFile: .github/orchestrator-context.md
+#    memoryDir: memory/repos/command-api
+#    subscriptions: [config/]
+#    relatedRepos: [query-api, web-client]
+#    status: active
+# -----------------------------------------------------------------------------
+repos: []
+
+# =============================================================================
+#  GROUP ENTRY — every field, and why it exists
+# =============================================================================
+#
+#  name             (string, required)
+#      How the group is addressed: `cross-repo.py group <name>`.
+#
+#  description      (string, optional)
+#      One sentence on what the group is for. Worth writing, because six months later
+#      the difference between "the checkout ordering" and "the repos that ship
+#      together" is not recoverable from a list of names.
+#
+#  repos            (list of names, required)
+#      Membership. Every name must match a `name` in `repos:` above; a group naming a
+#      repo that is not registered is a group that half-works, and it fails at the
+#      least convenient moment — mid-band, after the first repo is already changed.
+#
+#  executionOrder   (list of names, required)
+#      DEPENDENCY-FIRST: producers before consumers. Always.
+#
+#      Why this is the field to get right. A band walks this order and carries the
+#      contracts each repo exposes forward to the next one. Put a consumer ahead of
+#      its producer and you have asked someone to implement against a contract that is
+#      still moving — the field names are not fixed yet, so they get guessed. When the
+#      producer finally lands with different names, the consumer still compiles: it
+#      compiles against the shape it invented. What you get is a set of repositories
+#      that each build cleanly and do not talk to each other, and the defect is a
+#      naming drift rather than a logic error, so no type checker and no unit test in
+#      any single repo will find it. It surfaces at integration, in the expensive
+#      place, as a field that is always null.
+#
+#      The order is normally the same list as `repos`, but it is a separate field
+#      because membership and sequence change for different reasons: adding a repo to
+#      a group is routine, and reordering a band is a decision.
+#
+#  sharedContracts  (mapping of name -> shape, optional)
+#      The types and fields this group is known to pass between its repos, written as
+#      `Type.Field: shape`. During a band, `cross-repo.py band advance --exposes`
+#      accumulates the live version of this in the band file; recording the stable
+#      ones here means a reviewer can see what crossing the repo boundary is supposed
+#      to look like without starting a band to find out.
+#
+#      These names are consumed downstream AS NAMED. If a name is genuinely wrong,
+#      change it upstream and re-advance the band — one extra pass, and the only move
+#      that leaves the repos actually connected.
+#
+#  defaultBranch    (string, optional)
+#      The branch cross-repo work targets for this group. Declared per group rather
+#      than per repo because a set of repos being changed on different branches is not
+#      one band; it is two, and the ordering guarantees do not hold across them.
+#
+# -----------------------------------------------------------------------------
+#  Example — copy, edit, delete the comment. Nothing reads this block.
+# -----------------------------------------------------------------------------
+#  - name: order-pipeline
+#    description: The repos that ship together when an order-domain contract changes.
+#    repos: [command-api, query-api, web-client]
+#    executionOrder: [command-api, query-api, web-client]
+#    sharedContracts:
+#      OrderCreated.orderId: "string (guid)"
+#      OrderCreated.placedAtUtc: "string (ISO-8601 UTC)"
+#    defaultBranch: main
+# -----------------------------------------------------------------------------
+groups: []
+
+# -----------------------------------------------------------------------------
+#  Active context
+# -----------------------------------------------------------------------------
+#  Deliberately empty in the committed file, and it should stay that way. An active
+#  context is one developer's session on one machine at one moment; committing it
+#  means the next person to clone starts inside somebody else's half-finished work,
+#  and the first symptom is a command that operates on the wrong repository without
+#  saying which one it picked.
+#
+#  The live answer lives in `~/.orchestrator/state/connected-repos.json` under
+#  `active` and `activeGroup`. `cross-repo.py status` prints it, and prints where it
+#  read it from, so there is never a question of which file was consulted.
+#
+#    currentRepo   name of the repo in focus, or null
+#    currentGroup  name of the group in focus, or null
+#    loadedAt      ISO-8601 UTC timestamp of the load, or null
+#    loadedFiles   paths that were pulled into context for that load
+activeContext:
+  currentRepo: null
+  currentGroup: null
+  loadedAt: null
+  loadedFiles: []

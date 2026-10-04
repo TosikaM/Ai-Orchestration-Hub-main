@@ -1,0 +1,28 @@
+---
+description: Generate end-to-end specs and manual test cases for the user-visible paths.
+argument-hint: "[feature]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: []
+---
+
+# QA
+
+Generate E2E and manual cases using the `quality-sentinel` skill.
+
+## Skill Loaded
+**Required:** Read `skills/quality-sentinel/SKILL.md` and `commands/qa.md`.
+
+## Usage
+```
+/qa the donation submission flow
+```
+
+## Output
+- E2E spec files
+- A manual test case table: id, steps, expected, actual
+
+## Notes
+If a browser connector is unavailable, the specs are emitted and reported as not run.
+Never describe the result of a test run that did not happen.

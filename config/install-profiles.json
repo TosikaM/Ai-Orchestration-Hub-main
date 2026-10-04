@@ -1,0 +1,43 @@
+{
+  "$schema": "./install-profiles.schema.json",
+  "version": 1,
+  "description": "Named install shapes for a consumer repo. Four, not seven: the honest shapes for one organization's repositories are just-analysis, the-whole-thing, gating-only, and in-a-band.",
+  "profiles": {
+    "context-only": {
+      "description": "Repo context generation and the structural graph. No pipeline, no memory sync, no hooks. For a repo that wants /orchestrator-init and /analyze and nothing else.",
+      "components": ["agents-core", "skills-analysis", "prompts-analysis", "config-stack"]
+    },
+    "standard": {
+      "description": "The default. Full SDLC pipeline, all skills, shared memory, the hook runtime at the standard profile.",
+      "components": ["agents-all", "skills-all", "prompts-all", "instructions", "contexts", "hooks-runtime", "memory-shared", "config-all"]
+    },
+    "reviewer": {
+      "description": "Review, security, and verification only. For a repo where the orchestrator gates pull requests but does not write code.",
+      "components": ["agents-review", "skills-quality", "prompts-quality", "contexts", "hooks-runtime", "config-all"]
+    },
+    "band-member": {
+      "description": "A repo participating in a cross-repo band. Adds registry sync and contract hand-off to standard.",
+      "components": ["agents-all", "skills-all", "prompts-all", "instructions", "contexts", "hooks-runtime", "memory-shared", "config-all", "registry"]
+    }
+  },
+  "components": {
+    "agents-core": ["agents/orchestrator.agent.md", "agents/analyst.agent.md"],
+    "agents-review": ["agents/orchestrator.agent.md", "agents/reviewer.agent.md", "agents/qa.agent.md", "agents/security.agent.md"],
+    "agents-all": ["agents/"],
+    "skills-analysis": ["skills/repo-context-builder/", "skills/structural-graph/", "skills/grounding-guard/"],
+    "skills-quality": ["skills/quality-sentinel/", "skills/verification-loop/", "skills/security-review/", "skills/grounding-guard/"],
+    "skills-all": ["skills/"],
+    "prompts-analysis": ["prompts/analyze.prompt.md", "prompts/explore.prompt.md", "prompts/graph.prompt.md", "prompts/orchestrator-init.prompt.md"],
+    "prompts-quality": ["prompts/review.prompt.md", "prompts/test.prompt.md", "prompts/qa.prompt.md", "prompts/verify.prompt.md", "prompts/security.prompt.md"],
+    "prompts-all": ["prompts/"],
+    "instructions": ["instructions/"],
+    "contexts": ["contexts/"],
+    "hooks-runtime": ["hooks/", "lib/"],
+    "memory-shared": ["memory/shared/"],
+    "config-stack": ["config/stack-mappings.json"],
+    "config-all": ["config/"],
+    "registry": ["registry/"]
+  },
+  "hookProfileDefault": "standard",
+  "note": "A profile is a starting point, not a cage. connect-repo.ps1 accepts -With and -Without to adjust any profile at install time; the resolved set is recorded in .github/orchestrator-install.json so `repair` can reproduce the intent rather than guess at it."
+}

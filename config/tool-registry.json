@@ -1,0 +1,128 @@
+{
+  "$schema": "./tool-registry.schema.json",
+  "version": 2,
+  "description": "MCP tool globs and composed tool chains available to agents. Loaded by reference from agent files at runtime rather than inlined, so an organization can swap its MCP fleet without editing agent prose and no org-specific tool name can leak into a shared agent file (golden rule G4).",
+
+  "defaults": {
+    "enabledConnectors": [],
+    "rationale": "Zero connectors enabled out of the box. Every MCP tool description is always-on context that competes with the discovery budget for the same window. An org declares what it may enable here; a developer turns one on deliberately. Ceiling: config/token-budgets.json -> mcpSurface."
+  },
+
+  "governance": {
+    "_note": "A tool registry is not a list of endpoints; it is a list of things an agent may cause to happen in the world. Every entry therefore carries an owner, an environment, a risk class and an explicit operation list — because 'the orchestrator has GitHub access' is not a statement anybody can review, while 'the developer agent may open a pull request against non-default branches in the sandbox org, audited' is.",
+
+    "riskClasses": {
+      "read-only": "Observes. Cannot change anything outside this machine. No approval needed.",
+      "workspace-write": "Changes files in the working tree. Reversible with git. Autonomy level 2.",
+      "shared-write": "Changes something colleagues see — a branch, a pull request, a ticket. Autonomy level 4.",
+      "environment-write": "Changes a running system. Autonomy level 5, and never without a named human owner.",
+      "irreversible": "Cannot be undone by this system: a published package, a deleted resource, a rotated credential. Forbidden from an agent context regardless of level."
+    },
+
+    "requiredFields": ["owner", "environment", "riskClass", "allowedOperations", "auditLog", "authentication"],
+    "requiredFieldsRule": "A connector missing any of these is treated as UNGOVERNED and is refused by scripts/audit-agent-surface.py. An unreviewed tool is not a small gap: it is the one path where an agent reaches past the repository into systems other people depend on.",
+
+    "auditRule": "Every invocation of a connector whose riskClass is shared-write or above writes a line to ~/.orchestrator/security/egress.jsonl before the call. Content-free — the operation, the target and a hash, never the payload.",
+
+    "approvalMatrix": {
+      "read-only": "none",
+      "workspace-write": "none",
+      "shared-write": "human gate at the phase boundary",
+      "environment-write": "named approver, recorded in the decision log",
+      "irreversible": "refused"
+    }
+  },
+
+  "toolGlobs": [
+    "mcp_github_*",
+    "mcp_gitkraken_*",
+    "mcp_io_modelconte_*"
+  ],
+
+  "toolChains": {
+    "codeAnalysis": {
+      "sequence": ["structural-graph", "grep_search", "read_file"],
+      "useWhen": "Locating where a symbol or field lives before reading anything.",
+      "budgetPerStep": 2000,
+      "savesVersus": "Opening candidate files one at a time until the right one appears."
+    },
+    "implementation": {
+      "sequence": ["read_file", "replace_string_in_file", "run_in_terminal"],
+      "useWhen": "Making a change and immediately proving it builds.",
+      "budgetPerStep": 3000,
+      "savesVersus": "Editing several files, then discovering the first one broke the build."
+    },
+    "review": {
+      "sequence": ["get_changed_files", "read_file", "run_in_terminal"],
+      "useWhen": "Reviewing a diff rather than a whole repository.",
+      "budgetPerStep": 2500,
+      "savesVersus": "Whole-repo scanning, which produces a finding list nobody reads."
+    },
+    "storyCreation": {
+      "sequence": ["mcp_atlassian_*"],
+      "useWhen": "Writing stories and acceptance criteria into a tracker.",
+      "budgetPerStep": 1500,
+      "savesVersus": "Manual transcription from chat into the tracker."
+    },
+    "e2eTesting": {
+      "sequence": ["mcp_playwright_*", "run_in_terminal"],
+      "useWhen": "Generating and executing browser end-to-end specs.",
+      "budgetPerStep": 3000,
+      "savesVersus": "Hand-writing selectors against a page you have not loaded."
+    }
+  },
+
+  "optional": {
+    "atlassian": {
+      "glob": "mcp_atlassian_*",
+      "requiredBy": ["ba", "sdlc-orchestrator"],
+      "fallback": "Emit stories as Markdown in the response. Do not invent a ticket number.",
+      "healthCheck": { "probe": "list-projects", "timeoutMs": 4000 },
+      "owner": "unassigned",
+      "environment": "tracker",
+      "riskClass": "shared-write",
+      "allowedOperations": ["issue.read", "issue.create", "issue.comment"],
+      "deniedOperations": ["issue.delete", "project.configure", "workflow.modify"],
+      "auditLog": true,
+      "authentication": "oauth-user",
+      "note": "Creating a ticket is visible to a team and shows up in their sprint. That is why it is shared-write rather than a convenience."
+    },
+    "playwright": {
+      "glob": "mcp_playwright_*",
+      "requiredBy": ["qa"],
+      "fallback": "Emit Playwright specs as files; do not claim they were executed.",
+      "healthCheck": { "probe": "browser-version", "timeoutMs": 6000 },
+      "owner": "unassigned",
+      "environment": "local",
+      "riskClass": "workspace-write",
+      "allowedOperations": ["browser.launch", "browser.navigate", "spec.run"],
+      "deniedOperations": ["browser.navigate.production"],
+      "auditLog": false,
+      "authentication": "none",
+      "note": "Local only. A browser pointed at a production URL is an environment-write wearing a test's clothes — hence the denied operation."
+    },
+    "github": {
+      "glob": "mcp_github_*",
+      "requiredBy": ["release-engineering", "sdlc-orchestrator"],
+      "fallback": "Emit the PR body and release notes as Markdown for the user to paste.",
+      "healthCheck": { "probe": "rate-limit", "timeoutMs": 4000 },
+      "owner": "unassigned",
+      "environment": "vcs",
+      "riskClass": "shared-write",
+      "allowedOperations": ["repo.read", "branch.create", "pr.create", "pr.comment", "issue.comment"],
+      "deniedOperations": ["pr.merge", "release.publish", "repo.delete", "settings.modify", "secrets.write"],
+      "auditLog": true,
+      "authentication": "oauth-user",
+      "note": "pr.merge and release.publish are denied at the connector, not merely gated by autonomy level. Two independent controls, because this is the connector most likely to be enabled and least likely to be re-reviewed afterwards."
+    }
+  },
+
+  "_ownerNote": "Every `owner` above reads 'unassigned', and that is not an oversight left in by accident — it is the honest state until somebody's name goes there. An unowned connector with write access is a control nobody is accountable for. scripts/audit-agent-surface.py reports these; fill them in before enabling any connector in an organization that has more than one team.",
+
+  "healthPolicy": {
+    "markUnhealthyAfterFailures": 1,
+    "recheckAfterSeconds": 120,
+    "onUnhealthy": "Fail fast and take the declared fallback. A carefully-specified fallback that is never reached because the caller keeps retrying a timeout is decoration.",
+    "statePath": "~/.orchestrator/state/mcp-health.json"
+  }
+}

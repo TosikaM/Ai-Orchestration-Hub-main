@@ -1,0 +1,183 @@
+{
+  "$comment": "The single source of truth for hook wiring. Read by run.js, dispatch.js, and validate-structure.py's parity check. The plugin manifest (hooks/hooks.json) stays minimal and standard-shaped; everything this system needs to know about a hook lives here instead of being encoded into command-line arguments, which is where it rots.",
+  "version": 1,
+
+  "profiles": {
+    "minimal": "Lifecycle bookkeeping only. Nothing blocks.",
+    "standard": "The default. Adds the grounding, config, and destructive gates.",
+    "strict": "Everything, including the advisory passes that are noisy by design."
+  },
+
+  "profileExempt": [
+    "pre:read:prompt-defense",
+    "memory:write:redaction",
+    "pre:action:autonomy-gate"
+  ],
+  "profileExemptRationale": "A profile is a convenience dial for friction; it is not a security dial. Two guards ignore it, because turning them off by picking a lighter profile would be a footgun disguised as a preference. The hub distributes executable Markdown, and shared memory syncs organization-wide. ORCHESTRATOR_HOOKS_ENABLED=false still turns off the whole runtime — one obvious switch, not a hidden one.",
+
+  "hooks": {
+    "pre:edit-write:fact-force": {
+      "event": "PreToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "handler": "fact-force",
+      "profiles": ["standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "fact-force.hook.md"
+    },
+    "pre:edit-write:config-protection": {
+      "event": "PreToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "handler": "config-protection",
+      "profiles": ["standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "config-protection.hook.md"
+    },
+    "pre:read:prompt-defense": {
+      "event": "PreToolUse",
+      "matcher": "Read",
+      "handler": "prompt-defense",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "prompt-defense.hook.md"
+    },
+    "pre:action:autonomy-gate": {
+      "event": "PreToolUse",
+      "matcher": "Edit|Write|MultiEdit|Bash|PowerShell",
+      "handler": "autonomy-gate",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "autonomy-gate.hook.md",
+      "note": "Profile-exempt. Autonomy is a policy limit on blast radius, not a friction dial — choosing a lighter profile must not grant the ability to open a pull request or deploy."
+    },
+    "pre:bash:destructive-gate": {
+      "event": "PreToolUse",
+      "matcher": "Bash|PowerShell",
+      "handler": "destructive-gate",
+      "profiles": ["standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "destructive-gate.hook.md"
+    },
+    "pre:mcp:health": {
+      "event": "PreToolUse",
+      "matcher": "mcp__.*",
+      "handler": "mcp-health",
+      "profiles": ["standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "mcp-health.hook.md",
+      "note": "Registered in the manifest only when an org enables a connector. A gate on a surface nobody uses is pure startup cost."
+    },
+    "session:start:bootstrap": {
+      "event": "SessionStart",
+      "matcher": ".*",
+      "handler": "session-bootstrap",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "session-bootstrap.hook.md"
+    },
+    "session:start:token-budget-guard": {
+      "event": "SessionStart",
+      "matcher": ".*",
+      "handler": "token-budget-guard",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "token-budget-guard.hook.md",
+      "note": "Invoked in-process by session-bootstrap rather than registered separately, so session start costs one Node process, not two."
+    },
+    "pre:compact:checkpoint": {
+      "event": "PreCompact",
+      "matcher": ".*",
+      "handler": "pre-compact-checkpoint",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "pre-compact-checkpoint.hook.md"
+    },
+    "stop:citation-guard": {
+      "event": "Stop",
+      "matcher": ".*",
+      "handler": "citation-guard",
+      "profiles": ["standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "citation-guard.hook.md"
+    },
+    "stop:human-gate": {
+      "event": "Stop",
+      "matcher": ".*",
+      "handler": "human-gate",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "human-gate.hook.md"
+    },
+    "stop:learning-capture": {
+      "event": "Stop",
+      "matcher": ".*",
+      "handler": "learning-capture",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "async",
+      "blocking": false,
+      "doc": "learning-capture.hook.md"
+    },
+    "stop:context-staleness": {
+      "event": "Stop",
+      "matcher": ".*",
+      "handler": "context-staleness",
+      "profiles": ["standard", "strict"],
+      "mode": "async",
+      "blocking": false,
+      "doc": "context-staleness.hook.md"
+    },
+    "stop:telemetry": {
+      "event": "Stop",
+      "matcher": ".*",
+      "handler": "telemetry",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "async",
+      "blocking": false,
+      "doc": "telemetry.hook.md"
+    },
+    "session:end:teardown": {
+      "event": "SessionEnd",
+      "matcher": ".*",
+      "handler": "session-teardown",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": false,
+      "doc": "session-teardown.hook.md"
+    },
+    "memory:write:redaction": {
+      "event": "InProcess",
+      "matcher": null,
+      "handler": "memory-dedupe",
+      "profiles": ["minimal", "standard", "strict"],
+      "mode": "sync",
+      "blocking": true,
+      "doc": "memory-dedupe.hook.md",
+      "note": "Deliberately not an event hook. It is a function called at the write site, which is what the specification actually describes. Modeling it as an event would leave the write path unguarded whenever the event failed to fire. Not every guard is a hook; some are a function you must call, and the honest fix is to make the call site the only way to write."
+    }
+  },
+
+  "dispatchers": {
+    "stop:dispatcher:sync": {
+      "event": "Stop",
+      "mode": "sync",
+      "hookIds": ["stop:citation-guard", "stop:human-gate"],
+      "rationale": "One Node startup for the whole synchronous Stop phase instead of one per hook. Every handler exports run(payload) in addition to its CLI entry, which is a hard requirement designed in from the first handler because retrofitting it later is a rewrite."
+    },
+    "stop:dispatcher:async": {
+      "event": "Stop",
+      "mode": "async",
+      "hookIds": ["stop:learning-capture", "stop:context-staleness", "stop:telemetry"],
+      "rationale": "Learning capture must never make the user wait. Batching at Stop also means ten edits in one turn produce one staleness check, not ten."
+    }
+  }
+}

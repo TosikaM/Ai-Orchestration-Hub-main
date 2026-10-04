@@ -1,2 +1,32 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Line-ending policy.
+#
+# Without this file, git on Windows converts LF to CRLF on checkout. A CRLF lands in the
+# shebang line of every Python and shell script, and Linux CI then fails with
+# "bad interpreter: /usr/bin/env python\r" — an error that names neither the file nor the
+# cause. The repository is Windows-primary and its CI is Linux, so this is not hypothetical.
+
+* text=auto eol=lf
+
+# PowerShell keeps CRLF. Windows PowerShell 5.1 is the primary shell here, and these files
+# additionally carry a UTF-8 BOM (see CLAUDE.md) which the CI gate checks.
+*.ps1 text eol=crlf
+
+# Never touched: a byte-for-byte round trip matters for the knowledge corpus, because a
+# citation points back at the original and a mangled source breaks the audit trail.
+*.pdf   binary
+*.docx  binary
+*.xlsx  binary
+*.pptx  binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.vsix  binary
+
+# Generated content — mark it so a diff view can collapse it and reviewers look at the
+# .tmpl instead, which is the only place an edit should ever be made.
+agents/*.agent.md            linguist-generated=true
+skills/*/SKILL.md            linguist-generated=true
+commands/*.md                linguist-generated=true
+prompts/*.prompt.md          linguist-generated=true
+contexts/*.md                linguist-generated=true
+instructions/*.md            linguist-generated=true

@@ -1,0 +1,74 @@
+---
+applyTo: "**/*"
+description: Connects this repository to the AI Orchestrator hub.
+---
+
+<!--
+Auto-synced from the AI Orchestrator hub — DO NOT edit manually.
+Local edits are overwritten on the next sync. Change the hub instead.
+-->
+
+# Orchestrator Connector
+
+This repository is connected to the AI Orchestrator. The plugin carries the agents,
+skills, and hooks; this file states how they apply here.
+
+## Connection Status
+
+Install state lives in `.github/orchestrator-install.json`. Check it with:
+
+```
+python scripts/orchestrator.py doctor
+```
+
+## How This Works
+
+1. The plugin is installed once per machine and provides the skills, agents, and hooks.
+2. `/orchestrator-init` generates `.github/orchestrator-context.md` — this repository's profile.
+3. Skills read that profile plus shared memory before doing anything.
+4. Hooks enforce the gates: fact-forcing before a first edit, config protection, prompt
+   defense on synced content, and the human gate on `Stop`.
+
+Only two things are copied into this repository: the context file and the install state.
+Everything else stays in the plugin, which is why an upgrade is one command instead of
+N pull requests.
+
+## Convention Priority
+
+Most specific wins:
+
+```
+this repo's own CLAUDE.md / copilot-instructions.md   ← always wins
+      ↓
+this connector file
+      ↓
+shared best-practices from hub memory
+      ↓
+the stack template for the detected stack
+```
+
+**The repository always wins.** A hub default that overrides a team's stated convention
+is a hub that gets uninstalled.
+
+## Quality Rules
+
+- Score ≥ 80 to advance a pipeline phase
+- Build green before a pull request
+- Human gates stop execution — an agent cannot clear its own gate
+- Check anti-patterns before proposing a pattern
+
+{{GROUNDING_CONTRACT}}
+
+## Context Auto-Refresh
+
+The context file is regenerated on: first connect · an explicit `/orchestrator-init` · more than 14
+days of age · more than 20 changed source files. Staleness is **marked, never
+auto-applied** — regenerating a context file underneath someone mid-task rewrites the
+document they were reasoning from, and they have no way to tell.
+
+## What Sync Overwrites
+
+Only paths recorded in `.github/orchestrator-install.json` as owned. A file we did not
+write is reported and skipped, never overwritten. A file we wrote that you have since
+edited is backed up to `~/.orchestrator/backups/` before it is replaced, and the backup
+is named in the sync summary.

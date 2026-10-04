@@ -1,0 +1,109 @@
+---
+name: sdlc-orchestrator
+description: Runs the full SDLC pipeline from requirement to PR across one or many repos, with human gates and scored quality gates.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Edit, Write, Bash, Agent, AskUserQuestion]
+metadata:
+  version: 1.0.0
+  category: sdlc
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** build this feature, ship, full pipeline, end-to-end, from requirement to PR.
+**USE FOR:** the whole lifecycle — stories, impact, implementation, review, tests, release.
+**NOT FOR:** a single edit — that is `cqrs-developer`. Analysis alone — that is
+`repo-context-builder`. Running the pre-PR gate — that is `verification-loop`.
+
+## Before Starting — Mandatory
+
+- Load `memory/shared/anti-patterns.md`, `best-practices.md`, and `skill-evolution-log.md`
+- Load `.github/orchestrator-context.md`. If it is missing, invoke `repo-context-builder`
+  first — running a pipeline against an unprofiled repo produces confident guesses at
+  every phase
+- Load the active decision log so the pipeline does not re-open a settled question
+- Read this skill's Lessons Learned
+- Read `evals/evals.json` so the run knows what it will be judged against
+
+## Modes
+
+| Mode | What it does |
+|------|--------------|
+| Full pipeline | Every phase from `analyze` |
+| Resume | Re-enter at the phase recorded in the checkpoint. Never restart. |
+| Single phase | One phase, gates still apply |
+| Parallel sprint | Several independent tasks, each with its own pipeline id |
+
+## The Phases
+
+Scheduled from `config/pipeline-graph.json` — the DAG is data, not code:
+
+```
+0 CLASSIFY & PLAN
+1 BA: stories + acceptance criteria        → [HUMAN GATE]
+2 ANALYST: impact, every layer cited       → [HUMAN GATE]
+3 DEVELOPER: implement in dependency order
+4 REVIEWER ∥ QA   (both gate at ≥ 80)
+5 E2E + manual QA
+6 DOCUMENTATION                            → [HUMAN GATE: merge]
+```
+
+Phase 4 genuinely runs in parallel: `review` and `test` are siblings in the DAG and
+`deploy` waits for both.
+
+## Human Gate Protocol
+
+Write the gate artifact to `memory/sessions/<pipelineId>.gate-<phase>.md`, post the
+summary, update status, and **stop**. The Stop hook blocks the turn until a verdict file
+exists — you cannot clear your own gate, and that is the point. A gate an agent can
+clear is a request.
+
+On resume, re-enter at the recorded phase. Do not restart the pipeline.
+
+## Cross-Repo Band
+
+The band is persisted to `memory/sessions/<pipelineId>.band.json`:
+
+```json
+{ "requirement": "...", "executionOrder": ["shared-lib", "command-api", "query-api", "web"],
+  "completedRepos": [{ "repo": "...", "changes": [], "exposedInterfaces": [], "buildStatus": "", "notes": "" }],
+  "sharedContracts": {}, "remainingRepos": [], "pipelineState": "" }
+```
+
+On entering each repo, the upstream `sharedContracts` are injected as contracts that
+**must be consumed as named**. Renaming an upstream contract downstream is how a band
+produces four repos that each compile and do not talk to each other.
+
+## Error Recovery
+
+| Failure | Response |
+|---------|----------|
+| MCP timeout | Mark the connector unhealthy, take the declared fallback, continue |
+| Build failure | Stop the phase. Report the actual output, not a summary of it |
+| Test failure | Fix the code, never the test, unless the test is provably wrong |
+| Gate rejection | Read the reviewer's blocking list, address each, resubmit |
+| Context exhaustion | The PreCompact hook checkpoints. Resume from the checkpoint |
+| Same gate failed 3× | **Escalate to the human.** Three identical failures is a signal about the approach |
+
+## Quality Gates
+
+Stories complete · impact analysis cited · build green · tests ≥ 80 · review ≥ 80 ·
+conventions honored · no HIGH security finding open.
+
+## Adapting To Any Repo
+
+Detect the stack from `config/stack-mappings.json` → load `templates/<stack>/` → discover
+available agents → discover available MCP tools → **drop phases whose tooling is absent
+rather than faking them.** A phase reported as passed that could not run is worse than a
+phase reported as skipped.
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{CONFUSION_PROTOCOL}}
+
+{{GROUNDING_CONTRACT}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

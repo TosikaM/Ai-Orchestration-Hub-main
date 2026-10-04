@@ -1,0 +1,162 @@
+{
+  "name": "algoworks-ai-orchestrator-view",
+  "displayName": "Algoworks AI Orchestrator (View)",
+  "description": "Reads the orchestrator's state files and shows them as trees, a dashboard, and a human-gate review panel. It runs no pipeline and owns no orchestration — that lives in the Claude Code plugin.",
+  "publisher": "algoworks",
+  "version": "3.1.0",
+  "license": "PROPRIETARY",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abhishek-narula-algoworks/Ai-Orchestration-Hub",
+    "directory": "view"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "sdlc",
+    "orchestrator",
+    "pipeline",
+    "claude-code"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "workspaceContains:.github/orchestrator-install.json"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orchestrator",
+          "title": "AI Orchestrator",
+          "icon": "resources/orchestrator.svg"
+        }
+      ]
+    },
+    "views": {
+      "orchestrator": [
+        {
+          "id": "orchestrator-pipeline",
+          "name": "Pipeline",
+          "contextualTitle": "AI Orchestrator"
+        },
+        {
+          "id": "orchestrator-agents",
+          "name": "Agents",
+          "contextualTitle": "AI Orchestrator"
+        },
+        {
+          "id": "orchestrator-memory",
+          "name": "Memory",
+          "contextualTitle": "AI Orchestrator"
+        },
+        {
+          "id": "orchestrator-repos",
+          "name": "Connected Repos",
+          "contextualTitle": "AI Orchestrator"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "orchestrator.showDashboard",
+        "title": "Show Dashboard",
+        "category": "AI Orchestrator",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "orchestrator.refreshViews",
+        "title": "Refresh Views",
+        "category": "AI Orchestrator",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "orchestrator.openGateReview",
+        "title": "Open Gate Review",
+        "category": "AI Orchestrator",
+        "icon": "$(law)"
+      },
+      {
+        "command": "orchestrator.approveGate",
+        "title": "Approve Gate",
+        "category": "AI Orchestrator",
+        "icon": "$(check)"
+      },
+      {
+        "command": "orchestrator.requestChanges",
+        "title": "Request Changes on Gate",
+        "category": "AI Orchestrator",
+        "icon": "$(comment-draft)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "orchestrator.showDashboard",
+          "when": "view == orchestrator-pipeline",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orchestrator.refreshViews",
+          "when": "view == orchestrator-pipeline || view == orchestrator-agents || view == orchestrator-memory || view == orchestrator-repos",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Orchestrator (View)",
+      "properties": {
+        "aiorchestrator.stateHome": {
+          "type": "string",
+          "default": "",
+          "description": "Override the machine-scoped state directory. Empty means the ORCHESTRATOR_HOME environment variable if it is set, otherwise ~/.orchestrator. Set this only when you deliberately run more than one orchestrator state tree on one machine; two views pointed at different homes will disagree about which repo is active."
+        },
+        "aiorchestrator.refreshOnFileChange": {
+          "type": "boolean",
+          "default": true,
+          "description": "Refresh the trees automatically when a file under memory/sessions/ changes. Turn this off on a very slow filesystem; the Refresh Views command still works, and the trees are then only as current as the last time you asked."
+        },
+        "aiorchestrator.pipeline.showCompleted": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show pipelines whose status is complete or abandoned. Off keeps the tree to work in flight; the checkpoint files are never deleted either way, so nothing is lost by hiding them."
+        },
+        "aiorchestrator.memory.maxEntriesPerCategory": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "description": "How many entries to list under each shared-memory category. The Markdown files are ordered by effective confidence, so a cap keeps the highest-confidence entries and drops the tail."
+        },
+        "aiorchestrator.gateReview.confirmApprove": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for confirmation before recording an approval. The verdict releases a blocked agent session, so it is one of the few actions here with a consequence outside this window."
+        },
+        "aiorchestrator.dashboard.showTelemetry": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include a telemetry summary on the dashboard. Telemetry is off by default in the plugin as well; with it off there is nothing to summarize and the section reads as empty rather than as zero."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p ./ --noEmit",
+    "compile": "tsc -p ./",
+    "watch": "tsc -p ./ --watch",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
+    "vscode:prepublish": "npm run typecheck && npm run bundle",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.2",
+    "typescript": "^5.4.5"
+  }
+}

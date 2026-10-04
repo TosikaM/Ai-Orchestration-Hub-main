@@ -1,0 +1,86 @@
+---
+name: context-budget
+description: Audits and reduces token consumption across agents, skills, prompts, and memory.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: analysis
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** budget, tokens, slow, expensive, context window, "why is this so big".
+**USE FOR:** measuring the context bill and producing a ranked list of concrete cuts.
+**NOT FOR:** speeding up the build — that is `verification-loop`.
+
+## Step 1 Is Measurement, Not Analysis
+
+Run it and paste the table:
+
+```
+python scripts/context-bill.py --budget
+```
+
+An audit that opens with an opinion instead of a number is a review, not an audit. This
+skill previously had no instrument at all — it was an auditor with no ledger.
+
+## The Two Ledgers
+
+Confusing these is the most common way a token budget becomes theater:
+
+| Ledger | What | Paid |
+|--------|------|------|
+| **Always-on** | skill frontmatter (name + description) | Every session, every repo, every user, before anyone types |
+| **Per-invocation** | `SKILL.md` body + its command file + context layers | Once, when that command runs |
+
+A kilobyte in the first column costs orders of magnitude more than a kilobyte in the
+second. Optimize the wrong one and you have done arithmetic, not engineering.
+
+`references/` files are **on-demand** and are counted but not charged.
+
+## The Five Budgets
+
+| Budget | Ceiling | Enforced by |
+|--------|---------|-------------|
+| Discovery | 240 B/skill · 4,000 B total | `validate-structure.py`, `eval-008` |
+| Eager | 18,000 chars | the allocator + `token-budget-guard` |
+| Memory read | 6 instincts, confidence ≥ 0.7 | the digest builder |
+| Session start | 8,000 chars | `session-bootstrap` |
+| MCP surface | ≤ 1 connector, ≤ 30 tools | `tool-registry.json → defaults` |
+
+## The Ratchet
+
+After any change to the footprint:
+
+```
+python scripts/measure-discovery-budget.py        # re-measure and record
+```
+
+Growth that is a real feature: update `measuredValue`, `measuredAt`, and `dominantSkill`
+in the **same commit**, so the increase is a visible line in the diff. Accidental growth
+— trigger text that belongs in `## Routing` — is fixed in the frontmatter, not in the
+ceiling. After a reduction lands, re-measure so the ceiling ratchets **down** and the win
+is locked in.
+
+## The Usual Culprits, In Order
+
+1. A `SKILL.md` that absorbed reference material belonging in `references/`
+2. A frontmatter description carrying trigger and USE FOR text that belongs in the body
+3. A memory file that has never been deduplicated
+4. An MCP connector nobody uses, whose tool descriptions load every session anyway
+5. A session-start injection that grew one useful line at a time
+
+## Honest Labeling
+
+Every number this skill prints is a **chars ÷ 4 estimate** and says so. Do not put an
+estimate in front of a stakeholder as a measurement. If you need a real number, enable
+telemetry and generate one — an invented benchmark in a system whose stated purpose is
+preventing hallucination would be an unusually poor look.
+
+{{TOKEN_DISCIPLINE}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

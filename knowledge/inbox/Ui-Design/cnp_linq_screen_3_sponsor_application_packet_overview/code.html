@@ -1,0 +1,514 @@
+<!DOCTYPE html><html class="h-full bg-slate-50" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Application Packet Overview - CNP LINQ</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#081d3d',
+              navy: '#0b2a56',
+              active: '#134685',
+              primary: '#0252b8',
+              accent: '#0d6efd'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    /* Subtle custom scrollbar for dashboard density */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col font-sans">
+<div class="flex h-full min-h-screen overflow-hidden">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 flex-shrink-0 bg-brand-navy flex flex-col justify-between text-slate-300 select-none z-20" data-purpose="sidebar-navigation">
+<!-- Top Brand & Navigation Area -->
+<div>
+<!-- Logo Section -->
+<div class="px-6 py-5 border-b border-blue-950/40 flex items-center gap-3"><div class="flex items-center w-full px-1 py-1"><img alt="CNP LINQ Logo" class="h-8 w-auto object-contain brightness-0 invert" src="https://lh3.googleusercontent.com/aida/AEtjO1U9cp1eTKcoQCTQyoFStuCS2TOVo1VqGzRtbzOzhAW4eq0iCZhwZXrFVjftU88Iy_6v_OIFE_8c-CQ8I8-ijOKxAhfck7tnHj01QSzqJO1SZOtBf0PIPLMkBzQAA40uUv0Wa5Bl-qPul9FFvmnxA0rTpdKf_UxNvevO0J_MlKQQblvT6wf7wbo1oo4r-KkXhvgy-CxzBsi4zW0uBNHlcnuYRtHb66ROnblmmTqRfqz1Zo6IXinRMOISy14"></div></div>
+<!-- Main Navigation Links -->
+<nav aria-label="Sidebar Menu" class="mt-4 px-3 space-y-1">
+<!-- Dashboard -->
+<a class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Dashboard</span>
+</a>
+<!-- Applications (Active) -->
+<a aria-current="page" class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-semibold text-white bg-brand-primary rounded-lg shadow-sm" href="#">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Applications</span>
+</a>
+<!-- Sites -->
+<a class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Sites</span>
+</a>
+<!-- Documents -->
+<a class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Documents</span>
+</a>
+<!-- Notifications with badge -->
+<a class="group flex items-center justify-between px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<div class="flex items-center gap-3.5">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Notifications</span>
+</div>
+<span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">2</span>
+</a>
+<!-- Reports -->
+<a class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Reports</span>
+</a>
+<!-- Audit History -->
+<a class="group flex items-center gap-3.5 px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Audit History</span>
+</a>
+</nav>
+</div>
+<!-- Bottom System Links -->
+<div class="p-3 border-t border-blue-950/40 space-y-1">
+<a class="flex items-center gap-3.5 px-3 py-2 text-sm text-slate-400 hover:text-white rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3.5 px-3 py-2 text-sm text-slate-400 hover:text-white rounded-lg transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- Main Outer Wrapper -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+<!-- BEGIN: TopBar -->
+<header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 z-10" data-purpose="top-navigation-bar">
+<!-- Filters & Selectors -->
+<div class="flex items-center gap-6"><button aria-label="Toggle Navigation Sidebar" class="p-1.5 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary" type="button"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
+<!-- Program Selector -->
+<div class="flex items-center gap-2 text-sm">
+<label class="font-medium text-slate-500" for="program-select">Program:</label>
+<select class="rounded-md border-slate-300 py-1.5 pl-3 pr-8 text-sm font-semibold text-slate-800 focus:border-brand-primary focus:ring-brand-primary bg-slate-50" id="program-select">
+<option selected="">NSLP</option>
+<option>SBP</option>
+<option>CACFP</option>
+</select>
+</div>
+<!-- Program Year Selector -->
+<div class="flex items-center gap-2 text-sm">
+<label class="font-medium text-slate-500" for="year-select">Program Year:</label>
+<select class="rounded-md border-slate-300 py-1.5 pl-3 pr-8 text-sm font-semibold text-slate-800 focus:border-brand-primary focus:ring-brand-primary bg-slate-50" id="year-select">
+<option selected="">2026-27</option>
+<option>2025-26</option>
+<option>2024-25</option>
+</select>
+</div>
+</div>
+<!-- User Profile & Global Alerts -->
+<div class="flex items-center gap-5">
+<!-- Notifications Bell Icon -->
+<button aria-label="View notifications" class="relative p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-primary" type="button">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span class="absolute 0 top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">2</span>
+</button>
+<div class="h-6 w-px bg-slate-200"></div>
+<!-- Sponsor Director Info -->
+<div class="flex items-center gap-3 cursor-pointer select-none"><div class="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-brand-primary font-bold text-xs shadow-sm">JS</div><div class="text-left hidden md:block leading-tight"><div class="flex items-center gap-1.5"><p class="text-sm font-bold text-slate-900 leading-none">John Smith</p><span class="text-[10px] text-slate-400 font-normal">(Sponsor Director)</span></div><p class="text-xs text-slate-500 font-medium mt-0.5">ABC School District</p></div><svg class="w-4 h-4 text-slate-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- Scrollable Main Content Container -->
+<main class="flex-1 overflow-y-auto px-8 py-6 space-y-6" data-purpose="page-body">
+<!-- BEGIN: PageHeader -->
+<div data-purpose="header-section">
+<!-- Back Link -->
+<a class="inline-flex items-center text-xs font-semibold text-brand-primary hover:text-blue-800 mb-2" href="#">
+<svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+            Back to Applications
+          </a>
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+<div>
+<div class="flex items-center gap-3 flex-wrap">
+<h1 class="text-2xl font-bold text-slate-900 tracking-tight">Application #APP-10234</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-blue-100 text-brand-primary border border-blue-200">
+                  In Progress
+                </span>
+</div>
+<!-- Organization Meta -->
+<p class="mt-1 text-sm font-medium text-slate-600">
+                ABC School District <span class="text-slate-300 mx-1.5">•</span> FEIN: 12-3456789 <span class="text-slate-300 mx-1.5">•</span> Iowa
+              </p>
+<!-- Timestamps -->
+<p class="mt-1 text-xs text-slate-400">
+                Created: <span class="text-slate-600 font-medium">May 25, 2024</span>
+<span class="mx-2 text-slate-300">|</span>
+                Last Updated: <span class="text-slate-600 font-medium">May 30, 2024 10:32 AM</span> by John Smith
+              </p>
+</div>
+<!-- Next Action Card/Callout -->
+<div class="bg-white border border-slate-200 rounded-lg p-3.5 max-w-sm w-full shadow-sm flex flex-col justify-center">
+<span class="text-[11px] uppercase tracking-wider font-bold text-slate-500 block mb-0.5">Next Action</span>
+<p class="text-xs text-slate-700 leading-snug">
+                Complete required forms and resolve validation errors.
+              </p>
+</div>
+</div>
+</div>
+<!-- END: PageHeader -->
+<!-- BEGIN: SummaryCards -->
+<section aria-label="Key Application Metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="metric-summary-cards">
+<!-- Card 1: Overall Progress -->
+<div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div>
+<span class="text-xs font-medium text-slate-500">Overall Progress</span>
+<div class="text-2xl font-bold text-slate-900 mt-1">68%</div>
+</div>
+<div class="mt-3">
+<!-- Visual Progress Bar -->
+<div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+<div class="bg-emerald-500 h-2 rounded-full" style="width: 68%;"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2">7 of 10 sections complete</p>
+</div>
+</div>
+<!-- Card 2: Validation Status -->
+<div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div>
+<span class="text-xs font-medium text-slate-500">Validation Status</span>
+<div class="flex items-center gap-2 mt-1">
+<div class="w-5 h-5 rounded bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span class="text-xl font-bold text-slate-900">3 Errors</span>
+</div>
+</div>
+<div class="mt-4">
+<a class="text-xs font-semibold text-brand-primary hover:underline" href="#">View Validation</a>
+</div>
+</div>
+<!-- Card 3: Site Applications -->
+<div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div>
+<span class="text-xs font-medium text-slate-500">Site Applications</span>
+<div class="text-2xl font-bold text-slate-900 mt-1">24</div>
+<p class="text-xs text-slate-500 mt-0.5"><span class="font-medium text-slate-700">17</span> Ready <span class="text-slate-300 mx-1">|</span> <span class="font-medium text-slate-700">4</span> Attention</p>
+</div>
+<div class="mt-3">
+<a class="text-xs font-semibold text-brand-primary hover:underline" href="#">Manage Sites</a>
+</div>
+</div>
+<!-- Card 4: Supporting Documents -->
+<div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div>
+<span class="text-xs font-medium text-slate-500">Supporting Documents</span>
+<div class="text-2xl font-bold text-slate-900 mt-1">6 <span class="text-sm font-normal text-slate-500">of 7</span></div>
+<p class="text-xs font-medium text-amber-600 mt-0.5">1 Missing</p>
+</div>
+<div class="mt-3">
+<a class="text-xs font-semibold text-brand-primary hover:underline" href="#">Manage Documents</a>
+</div>
+</div>
+</section>
+<!-- END: SummaryCards -->
+<!-- BEGIN: ContentGrid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" data-purpose="main-layout-grid">
+<!-- LEFT / CENTER: Packet Forms & Site Summary (2 Columns wide) -->
+<div class="lg:col-span-2 space-y-6">
+<!-- Packet Forms Table Card -->
+<div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden" data-purpose="packet-forms-table">
+<div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
+<h2 class="text-base font-bold text-slate-900">Packet Forms</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs border-collapse">
+<thead>
+<tr class="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+<th class="py-3 px-4">Form / Section</th>
+<th class="py-3 px-4">Status</th>
+<th class="py-3 px-4 w-40">Completion</th>
+<th class="py-3 px-4">Last Updated</th>
+<th class="py-3 px-4 text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 text-slate-700">
+<!-- Row 1: Sponsor Application -->
+<tr class="hover:bg-slate-50/50">
+<td class="py-3.5 px-4 font-semibold text-slate-900">Sponsor Application</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Complete
+                        </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-slate-600 w-8">100%</span>
+<div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-slate-500">May 30, 2024 10:20 AM</td>
+<td class="py-3.5 px-4 text-right">
+<a class="font-semibold text-brand-primary hover:underline" href="#">View</a>
+</td>
+</tr>
+<!-- Row 2: Site Applications -->
+<tr class="hover:bg-slate-50/50">
+<td class="py-3.5 px-4 font-semibold text-slate-900">Site Applications</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          In Progress
+                        </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-slate-600 w-8">75%</span>
+<div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-amber-500 h-1.5 rounded-full" style="width: 75%;"></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-slate-500">May 30, 2024 09:45 AM</td>
+<td class="py-3.5 px-4 text-right">
+<a class="font-semibold text-brand-primary hover:underline" href="#">Open</a>
+</td>
+</tr>
+<!-- Row 3: Supporting Documents -->
+<tr class="hover:bg-slate-50/50">
+<td class="py-3.5 px-4 font-semibold text-slate-900">Supporting Documents</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          In Progress
+                        </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-slate-600 w-8">85%</span>
+<div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-amber-500 h-1.5 rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-slate-500">May 29, 2024 03:10 PM</td>
+<td class="py-3.5 px-4 text-right">
+<a class="font-semibold text-brand-primary hover:underline" href="#">Open</a>
+</td>
+</tr>
+<!-- Row 4: Certifications & Assurances -->
+<tr class="hover:bg-slate-50/50">
+<td class="py-3.5 px-4 font-semibold text-slate-900">Certifications &amp; Assurances</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Not Started
+                        </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-slate-600 w-8">0%</span>
+<div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-slate-300 h-1.5 rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-slate-400">—</td>
+<td class="py-3.5 px-4 text-right">
+<a class="font-semibold text-brand-primary hover:underline" href="#">Start</a>
+</td>
+</tr>
+<!-- Row 5: Additional Information -->
+<tr class="hover:bg-slate-50/50">
+<td class="py-3.5 px-4 font-semibold text-slate-900">Additional Information</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Not Started
+                        </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-slate-600 w-8">0%</span>
+<div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-slate-300 h-1.5 rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-slate-400">—</td>
+<td class="py-3.5 px-4 text-right">
+<a class="font-semibold text-brand-primary hover:underline" href="#">Start</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Expand / Detail Footer -->
+<div class="px-4 py-2.5 bg-slate-50/50 border-t border-slate-200">
+<button class="inline-flex items-center text-xs font-semibold text-brand-primary hover:text-blue-800" type="button">
+<span>View form details</span>
+<svg class="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Site Applications Summary Card -->
+<div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm" data-purpose="site-applications-summary">
+<h3 class="text-sm font-bold text-slate-900 mb-4">Site Applications Summary</h3>
+<!-- Status Badges Row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-center">
+<!-- Total Sites -->
+<div class="border border-slate-200 rounded-md p-2.5 bg-slate-50/60">
+<span class="text-[11px] font-medium text-slate-500 block">Total Sites</span>
+<span class="text-lg font-bold text-brand-primary block mt-0.5">24</span>
+</div>
+<!-- Ready -->
+<div class="border border-emerald-200 bg-emerald-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-emerald-700 block">Ready</span>
+<span class="text-lg font-bold text-emerald-700 block mt-0.5">17</span>
+</div>
+<!-- Attention -->
+<div class="border border-amber-200 bg-amber-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-amber-700 block">Attention</span>
+<span class="text-lg font-bold text-amber-700 block mt-0.5">4</span>
+</div>
+<!-- Under Review -->
+<div class="border border-sky-200 bg-sky-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-sky-700 block">Under Review</span>
+<span class="text-lg font-bold text-sky-700 block mt-0.5">3</span>
+</div>
+<!-- Returned -->
+<div class="border border-purple-200 bg-purple-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-purple-700 block">Returned</span>
+<span class="text-lg font-bold text-purple-700 block mt-0.5">2</span>
+</div>
+<!-- Approved -->
+<div class="border border-emerald-200 bg-emerald-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-emerald-700 block">Approved</span>
+<span class="text-lg font-bold text-emerald-700 block mt-0.5">10</span>
+</div>
+<!-- Denied -->
+<div class="border border-red-200 bg-red-50/30 rounded-md p-2.5">
+<span class="text-[11px] font-medium text-red-600 block">Denied</span>
+<span class="text-lg font-bold text-red-600 block mt-0.5">0</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT: Application Details Sidebar Card -->
+<div class="space-y-6" data-purpose="application-details-sidebar">
+<div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+<h3 class="text-sm font-bold text-slate-900 pb-3 border-b border-slate-200">Application Details</h3>
+<dl class="divide-y divide-slate-100 text-xs mt-1">
+<!-- Program -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Program</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">NSLP</dd>
+</div>
+<!-- Program Year -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Program Year</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">2026-27</dd>
+</div>
+<!-- Application ID -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Application ID</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">APP-10234</dd>
+</div>
+<!-- Status -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Status</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">In Progress</dd>
+</div>
+<!-- Version -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Version</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">1</dd>
+</div>
+<!-- State -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">State</dt>
+<dd class="text-slate-900 font-semibold mt-0.5">Assigned To</dd>
+</div>
+<!-- Assigned To -->
+<div class="py-2.5 flex flex-col">
+<dt class="text-slate-500 font-medium">Assigned To</dt>
+<dd class="text-slate-400 font-medium mt-0.5">—</dd>
+</div>
+</dl>
+</div>
+</div>
+</div>
+<!-- END: ContentGrid -->
+</main>
+<!-- BEGIN: ActionFooter -->
+<footer class="bg-white border-t border-slate-200 px-8 py-3.5 flex items-center justify-between z-10" data-purpose="primary-action-bar">
+<!-- Left: Dashboard Navigation -->
+<div>
+<button class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300" type="button">
+            Go to Dashboard
+          </button>
+</div>
+<!-- Right: Primary Workflow Actions -->
+<div class="flex items-center gap-3">
+<!-- Validate Application (Secondary Action Button) -->
+<button class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-brand-primary bg-white border border-brand-primary rounded hover:bg-blue-50 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-primary" type="button">
+<svg class="w-4 h-4 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Validate Application
+          </button>
+<!-- Submit for Approval (Primary CTA Button) -->
+<button class="px-5 py-2 text-xs font-semibold text-white bg-brand-primary hover:bg-blue-700 rounded transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary" type="button">
+            Submit for Approval
+          </button>
+</div>
+</footer>
+<!-- END: ActionFooter -->
+</div>
+</div>
+</body></html>

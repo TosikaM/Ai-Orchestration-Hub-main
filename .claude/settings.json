@@ -1,0 +1,16 @@
+{
+  "env": {
+    "ORCHESTRATOR_PLUGIN_ROOT": "${CLAUDE_PROJECT_DIR}",
+    "ORCHESTRATOR_HOOK_PROFILE": "standard"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/validate-structure.py)",
+      "Bash(python scripts/gen-content.py --check)",
+      "Bash(python scripts/context-bill.py)",
+      "Bash(python scripts/measure-discovery-budget.py --check)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)"
+    ]
+  }
+}

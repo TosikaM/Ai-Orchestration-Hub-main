@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-slate-50" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CNP LINQ - Site Application List</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#071739',
+              dark: '#0b1e3b',
+              sidebarHover: '#13284f',
+              blue: '#0D52B7',
+              lightBlue: '#0284C7',
+              accent: '#38bdf8'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex overflow-hidden font-sans">
+<!-- BEGIN: Left Navigation Sidebar -->
+<aside class="w-64 bg-brand-navy flex-shrink-0 flex flex-col justify-between text-slate-300 z-20 select-none" data-purpose="main-sidebar">
+<!-- Top Brand & Navigation -->
+<div class="flex flex-col flex-1 overflow-y-auto">
+<!-- Brand Logo Container -->
+<div class="h-16 flex items-center px-5 border-b border-slate-800 bg-[#06132f]">
+<div class="flex items-center gap-3">
+<!-- Stylized Inline SVG Brand Logo -->
+<svg class="h-8 w-auto flex-shrink-0" fill="none" viewbox="0 0 280 64" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(4, 8)">
+<circle cx="24" cy="24" fill="none" r="20" stroke="#38BDF8" stroke-dasharray="90 35" stroke-width="4.5"></circle>
+<circle cx="24" cy="24" fill="none" r="13" stroke="#60A5FA" stroke-dasharray="60 25" stroke-width="4.5" transform="rotate(45 24 24)"></circle>
+<circle cx="24" cy="24" fill="#60A5FA" r="5"></circle>
+<text fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="900" letter-spacing="-0.5" x="56" y="31">CNP LINQ</text>
+<text fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" letter-spacing="0.5" x="58" y="44">Child Nutrition Programs</text>
+</g>
+</svg>
+</div>
+</div>
+<!-- Navigation Links Menu -->
+<nav aria-label="Sidebar Navigation" class="p-3 space-y-1 text-sm font-medium">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Dashboard</span>
+</a>
+<!-- Applications (Active Link) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-brand-blue text-white shadow-sm font-semibold" href="#">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Applications</span>
+</a>
+<!-- Sites -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Sites</span>
+</a>
+<!-- Documents -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Documents</span>
+</a>
+<!-- Notifications -->
+<a class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<div class="flex items-center gap-3">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Notifications</span>
+</div>
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-rose-600 rounded-full">2</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Reports</span>
+</a>
+<!-- Audit History -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Audit History</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Sidebar Section -->
+<div class="p-3 border-t border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-brand-sidebarHover transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- END: Left Navigation Sidebar -->
+<!-- BEGIN: Main View Container -->
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+<!-- BEGIN: Top Header Bar -->
+<header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-10" data-purpose="top-header">
+<!-- Left: Context Selectors -->
+<div class="flex items-center gap-4">
+<!-- Program Selector -->
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Program:</span>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-sm font-semibold text-slate-800 hover:bg-slate-100 transition-colors" type="button">
+            NSLP
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<div class="h-4 w-px bg-slate-200"></div>
+<!-- Program Year Selector -->
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Program Year:</span>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-sm font-semibold text-slate-800 hover:bg-slate-100 transition-colors" type="button">
+            2026-27
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Right: Notifications & User Profile -->
+<div class="flex items-center gap-5">
+<!-- Notification Bell Icon with Badge -->
+<div class="relative cursor-pointer">
+<button aria-label="View notifications" class="text-slate-500 hover:text-slate-700 p-1" type="button">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+</button>
+<span class="absolute top-0 right-0 transform translate-x-1 -translate-y-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center ring-2 ring-white">2</span>
+</div>
+<div class="h-6 w-px bg-slate-200"></div>
+<!-- User Profile -->
+<button class="flex items-center gap-3 text-left focus:outline-none" type="button">
+<div class="w-9 h-9 rounded-full bg-brand-blue text-white font-semibold flex items-center justify-center text-sm ring-2 ring-slate-100">
+            JS
+          </div>
+<div class="hidden sm:block">
+<div class="text-xs font-bold text-slate-800 flex items-center gap-1">
+              John Smith
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="text-[11px] text-slate-500 font-normal">Sponsor Staff</div>
+</div>
+</button>
+</div>
+</header>
+<!-- END: Top Header Bar -->
+<!-- BEGIN: Scrollable Content Area -->
+<main class="flex-1 overflow-y-auto px-8 py-6 space-y-6" data-purpose="site-applications-batch-view">
+<!-- Breadcrumb Link -->
+<div>
+<a class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:underline" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+          Back to Site Applications Summary
+        </a>
+</div>
+<!-- Page Header & Action Buttons -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="text-2xl font-bold text-slate-900 tracking-tight">Site Application List</h1>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">
+              IN PROGRESS
+            </span>
+</div>
+<p class="text-xs text-slate-500 mt-1 font-medium">
+            Application #APP-10234 • ABC School District • FEIN: 12-3456789 • Iowa
+          </p>
+<p class="text-sm text-slate-600 mt-1">
+            Use this list to review and manage all site applications included in this application.
+          </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3 flex-shrink-0">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition" type="button">
+<svg class="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Import Sites
+          </button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue rounded-md text-sm font-semibold text-white hover:bg-blue-800 shadow-sm transition" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+            Add Site Application
+          </button>
+</div>
+</div>
+<!-- BEGIN: Metric Status Cards (7 Columns) -->
+<section aria-label="Status Metrics Summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3" data-purpose="status-cards-grid">
+<!-- Total Sites Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-slate-600">Total Sites</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-blue-50 text-brand-blue rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">24</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View all →
+          </a>
+</div>
+<!-- Ready Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-emerald-700">Ready</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-emerald-50 text-emerald-600 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">17</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View ready →
+          </a>
+</div>
+<!-- Attention Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-amber-700">Attention</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-amber-50 text-amber-600 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">4</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View attention →
+          </a>
+</div>
+<!-- Under Review Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-blue-700">Under Review</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-blue-50 text-blue-600 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">3</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View under review →
+          </a>
+</div>
+<!-- Returned Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-indigo-700">Returned</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-indigo-50 text-indigo-600 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">2</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View returned →
+          </a>
+</div>
+<!-- Approved Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-emerald-800">Approved</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-emerald-50 text-emerald-700 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">10</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View approved →
+          </a>
+</div>
+<!-- Denied Card -->
+<div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+<div>
+<span class="text-xs font-semibold text-rose-700">Denied</span>
+<div class="mt-2 flex items-baseline gap-2">
+<div class="p-1 bg-rose-50 text-rose-600 rounded">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-2xl font-black text-slate-900 leading-none">0</span>
+</div>
+</div>
+<a class="mt-3 text-[11px] font-semibold text-brand-blue hover:underline flex items-center gap-1" href="#">
+            View denied →
+          </a>
+</div>
+</section>
+<!-- END: Metric Status Cards -->
+<!-- BEGIN: Filter and Search Toolbar -->
+<section class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-xs" data-purpose="table-filter-bar">
+<div class="flex flex-wrap items-center justify-between gap-3">
+<!-- Search & Selects Group -->
+<div class="flex flex-wrap items-center gap-3 flex-1">
+<!-- Search Bar -->
+<div class="relative min-w-[260px] max-w-xs flex-1">
+<input class="w-full pl-9 pr-4 py-1.5 text-xs text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-blue focus:border-brand-blue placeholder:text-slate-400" placeholder="Search by site name, ID, or type..." type="text"/>
+<svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<!-- Status Dropdown -->
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-slate-500">Status</span>
+<button class="inline-flex items-center justify-between gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50" type="button">
+                All
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Site Type Dropdown -->
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-slate-500">Site Type</span>
+<button class="inline-flex items-center justify-between gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50" type="button">
+                All
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Eligibility Dropdown -->
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-slate-500">Eligibility</span>
+<button class="inline-flex items-center justify-between gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-50" type="button">
+                All
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Filter Icon Action -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50" type="button">
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+              Filters
+            </button>
+<button class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition" type="button">
+              Clear all
+            </button>
+</div>
+</div>
+</section>
+<!-- END: Filter and Search Toolbar -->
+<!-- BEGIN: Batch Table Header Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<h2 class="text-base font-bold text-slate-900">Site Applications</h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            24 sites
+          </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Export
+          </button>
+<button class="p-1.5 bg-white border border-slate-300 rounded-md text-slate-500 hover:text-slate-700 shadow-xs" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- END: Batch Table Header Bar -->
+<!-- BEGIN: Site Applications Data Table -->
+<div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs" data-purpose="site-applications-table">
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+<thead class="bg-slate-50 text-slate-600 font-semibold select-none">
+<tr>
+<th class="py-3 pl-4 pr-3 w-10 text-center" scope="col">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</th>
+<th class="px-3 py-3 cursor-pointer hover:text-slate-900" scope="col">
+<div class="flex items-center gap-1">
+                    Site ID
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</th>
+<th class="px-3 py-3 cursor-pointer hover:text-slate-900" scope="col">
+<div class="flex items-center gap-1">
+                    Site Name
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</th>
+<th class="px-3 py-3" scope="col">Site Type</th>
+<th class="px-3 py-3" scope="col">Eligibility</th>
+<th class="px-3 py-3" scope="col">Status</th>
+<th class="px-3 py-3 cursor-pointer hover:text-slate-900" scope="col">
+<div class="flex items-center gap-1">
+                    Last Updated
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</th>
+<th class="px-3 py-3 cursor-pointer hover:text-slate-900" scope="col">
+<div class="flex items-center gap-1">
+                    Updated By
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</th>
+<th class="py-3 pl-3 pr-4 text-right" scope="col">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 bg-white">
+<!-- Row 1: Lincoln Elementary -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00123</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Lincoln Elementary School</td>
+<td class="px-3 py-3.5 text-slate-600">Base</td>
+<td class="px-3 py-3.5 text-slate-600">Free</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Ready
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 30, 2024 10:15 AM</td>
+<td class="px-3 py-3.5 text-slate-600">John Smith</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Washington Middle School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00124</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Washington Middle School</td>
+<td class="px-3 py-3.5 text-slate-600">Base</td>
+<td class="px-3 py-3.5 text-slate-600">Reduced</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                    Returned
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 30, 2024 9:42 AM</td>
+<td class="px-3 py-3.5 text-slate-600">Jane Doe</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Roosevelt Elementary School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00125</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Roosevelt Elementary School</td>
+<td class="px-3 py-3.5 text-slate-600">Non-Base</td>
+<td class="px-3 py-3.5 text-slate-600">Free</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-300">
+                    Attention
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 29, 2024 3:20 PM</td>
+<td class="px-3 py-3.5 text-slate-600">John Smith</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-brand-blue hover:bg-slate-50" type="button">
+                      Open
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Jefferson High School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00126</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Jefferson High School</td>
+<td class="px-3 py-3.5 text-slate-600">Base</td>
+<td class="px-3 py-3.5 text-slate-600">Paid</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    Under Review
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 29, 2024 11:05 AM</td>
+<td class="px-3 py-3.5 text-slate-600">State Reviewer</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Franklin Elementary School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00127</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Franklin Elementary School</td>
+<td class="px-3 py-3.5 text-slate-600">Non-Base</td>
+<td class="px-3 py-3.5 text-slate-600">Free</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                    Approved
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 28, 2024 4:30 PM</td>
+<td class="px-3 py-3.5 text-slate-600">State Administrator</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Madison Elementary School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00128</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Madison Elementary School</td>
+<td class="px-3 py-3.5 text-slate-600">Base</td>
+<td class="px-3 py-3.5 text-slate-600">Free</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Ready
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 28, 2024 2:15 PM</td>
+<td class="px-3 py-3.5 text-slate-600">John Smith</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7: Lincoln High School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00129</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Lincoln High School</td>
+<td class="px-3 py-3.5 text-slate-600">Base</td>
+<td class="px-3 py-3.5 text-slate-600">Reduced</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Ready
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 28, 2024 1:05 PM</td>
+<td class="px-3 py-3.5 text-slate-600">John Smith</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-slate-700 hover:bg-slate-50" type="button">
+                      View
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 8: Grant Elementary School -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-3.5 pl-4 pr-3 text-center">
+<input class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue" type="checkbox"/>
+</td>
+<td class="px-3 py-3.5 font-medium text-slate-900">00130</td>
+<td class="px-3 py-3.5 font-semibold text-brand-blue hover:underline cursor-pointer">Grant Elementary School</td>
+<td class="px-3 py-3.5 text-slate-600">Non-Base</td>
+<td class="px-3 py-3.5 text-slate-600">Paid</td>
+<td class="px-3 py-3.5">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-300">
+                    Attention
+                  </span>
+</td>
+<td class="px-3 py-3.5 text-slate-500 whitespace-nowrap">May 27, 2024 3:45 PM</td>
+<td class="px-3 py-3.5 text-slate-600">Jane Doe</td>
+<td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+<div class="inline-flex rounded-md shadow-xs">
+<button class="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-l-md text-brand-blue hover:bg-slate-50" type="button">
+                      Open
+                    </button>
+<button class="px-1.5 py-1 text-xs bg-white border-y border-r border-slate-300 rounded-r-md text-slate-600 hover:bg-slate-50" type="button">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+<div>
+            Showing <span class="font-semibold text-slate-900">1</span> to <span class="font-semibold text-slate-900">10</span> of <span class="font-semibold text-slate-900">24</span> sites
+          </div>
+<div class="flex items-center gap-4">
+<!-- Page buttons -->
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-slate-300 cursor-not-allowed" disabled="" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded border border-brand-blue bg-blue-50 text-brand-blue font-bold text-xs" type="button">
+                1
+              </button>
+<button class="w-7 h-7 flex items-center justify-center rounded border border-transparent text-slate-600 hover:bg-slate-200 text-xs" type="button">
+                2
+              </button>
+<button class="w-7 h-7 flex items-center justify-center rounded border border-transparent text-slate-600 hover:bg-slate-200 text-xs" type="button">
+                3
+              </button>
+<button class="p-1 rounded text-slate-600 hover:bg-slate-200" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Page Size Dropdown -->
+<div class="flex items-center gap-1.5">
+<select class="py-1 pl-2 pr-6 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-brand-blue focus:border-brand-blue text-slate-700">
+<option>10 / page</option>
+<option>25 / page</option>
+<option>50 / page</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- END: Site Applications Data Table -->
+<!-- BEGIN: Bottom Helper & Legend Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4" data-purpose="guidance-and-legend">
+<!-- Left: Need Help Info Card -->
+<div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex items-start gap-3">
+<div class="text-brand-blue flex-shrink-0 mt-0.5">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h3 class="text-xs font-bold text-slate-800">Need Help?</h3>
+<p class="text-xs text-slate-600 mt-1 leading-relaxed">
+              Sites with attention items require your action. Review details to resolve validation errors or missing information.
+            </p>
+</div>
+</div>
+<!-- Middle: Quick Actions Card -->
+<div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-center">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 text-slate-500">Quick Actions</h3>
+<div class="space-y-2">
+<a class="flex items-center justify-between text-xs font-medium text-brand-blue hover:underline" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                View Validation Results
+              </span>
+<span>→</span>
+</a>
+<a class="flex items-center justify-between text-xs font-medium text-brand-blue hover:underline" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                Go to Supporting Documents
+              </span>
+<span>→</span>
+</a>
+</div>
+</div>
+<!-- Right: Status Legend Card -->
+<div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5 text-slate-500">Legend</h3>
+<div class="grid grid-cols-2 gap-x-2 gap-y-2 text-[11px]">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="font-semibold text-slate-700">Ready:</span>
+<span class="text-slate-500 truncate">Complete &amp; ready</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span class="font-semibold text-slate-700">Approved:</span>
+<span class="text-slate-500 truncate">Approved by state</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+<span class="font-semibold text-slate-700">Attention:</span>
+<span class="text-slate-500 truncate">Requires action</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-purple-500"></span>
+<span class="font-semibold text-slate-700">Returned:</span>
+<span class="text-slate-500 truncate">For correction</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span class="font-semibold text-slate-700">Under Review:</span>
+<span class="text-slate-500 truncate">Under state review</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-rose-500"></span>
+<span class="font-semibold text-slate-700">Denied:</span>
+<span class="text-slate-500 truncate">Denied</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Bottom Helper & Legend Grid -->
+</main>
+<!-- END: Scrollable Content Area -->
+</div>
+<!-- END: Main View Container -->
+</body></html>

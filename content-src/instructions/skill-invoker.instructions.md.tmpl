@@ -1,0 +1,96 @@
+---
+applyTo: "**/*"
+description: Bridges commands and natural language to the right skill protocol.
+---
+
+<!--
+Auto-synced from the AI Orchestrator hub — DO NOT edit manually.
+Local edits are overwritten on the next sync. Change the hub instead.
+-->
+
+# Skill Invoker
+
+## The Registry
+
+| Command | Skill |
+|---------|-------|
+| `/sdlc-start` `/pipeline` `/plan` `/document` | `sdlc-orchestrator` |
+| `/analyze` `/explore` | `repo-context-builder` |
+| `/implement` | `cqrs-developer` |
+| `/review` `/test` `/qa` | `quality-sentinel` |
+| `/graph` | `structural-graph` |
+| `/verify` | `verification-loop` |
+| `/budget` | `context-budget` |
+| `/security` | `security-review` |
+| `/adr` | `architecture-decision` |
+| `/release` | `release-engineering` |
+| `/ground` | `grounding-guard` |
+| `/learn` `/memory` | `continuous-learning` |
+| `/loop` | `autonomous-loop` |
+| `/repo` | `cross-repo-orchestration` |
+| `/mcp-compose` | `mcp-tool-composer` |
+| `/knowledge` | `knowledge-base` |
+
+Skills live in the plugin. A repository-specific variant may be committed to
+`.claude/skills/<name>/` and takes precedence — that is the supported override path, and
+it is the platform's own mechanism rather than something this system reimplements.
+
+{{FOUR_LAWS}}
+
+## Mandatory Context Load
+
+Before dispatching, load in parallel:
+
+- `~/.orchestrator/state/connected-repos.json`
+- `memory/shared/{anti-patterns,best-practices,instincts}.md`
+- `memory/decisions/<repo-slug>.jsonl` — settled decisions
+- `.github/orchestrator-context.md`
+- the matched `SKILL.md` and its command file
+
+{{RESPONSE_HEADER}}
+
+## Natural-Language Auto-Invoke
+
+| Intent words | Skill |
+|---|---|
+| analyze, trace, impact, "how does X work" | `repo-context-builder` |
+| implement, add, fix, build, wire up | `cqrs-developer` |
+| review, critique, "is this any good" | `quality-sentinel` |
+| test, coverage, spec | `quality-sentinel` |
+| secure, vulnerability, CVE, secret | `security-review` |
+| decide, tradeoff, "should we" | `architecture-decision` |
+| ship, release, changelog | `release-engineering` |
+| slow, expensive, tokens | `context-budget` |
+| "what did we decide", "why is it like this" | `continuous-learning` then `architecture-decision` |
+| "what does the spec say", requirement | `knowledge-base` |
+
+## Architecture Adaptation
+
+Read `.github/orchestrator-context.md` → select `templates/<stack>/` → adapt to what the
+repository actually does → fall back to `templates/generic/` when nothing matches. Never
+impose a pattern the repository does not use because a skill's name suggests it.
+
+**When the repository is new, that chain has nothing to adapt to.** Existing code is the
+authority only where it exists; with none, an agent falls back on recall, and recall is
+how a project starts two framework majors behind on a dependency that has changed licence.
+Read the floor from `config/architecture-baseline.json` —
+`lib/config.js:baselineForStack(<stackId>)`, keyed to the same stack ids as
+`config/stack-mappings.json`. The two answer different questions: stack-mappings detects
+what a repo **is**, the baseline records what a new one **should be**.
+
+Prescriptive on a new project, advisory on an existing one — report the gap there, never
+rewrite working code to close it. Its versions carry `verifiedOn` and a `source`, and most
+are `model-recall` rather than measured, so state the recorded floor and the version you
+actually observe and name which is which. A stack with no baseline entry returns null:
+say so and ask, rather than taking whichever entry happens to be first.
+
+## Self-Evolution
+
+When a skill's protocol proves wrong or incomplete, append the lesson to that skill's
+`## Lessons Learned` and to `memory/shared/skill-evolution-log.md`, through
+`python scripts/memory.py`. Not by hand, and not mid-task — a lesson written mid-task is
+usually a fact about that task.
+
+{{PROMPT_DEFENSE}}
+
+{{GROUNDING_CONTRACT}}

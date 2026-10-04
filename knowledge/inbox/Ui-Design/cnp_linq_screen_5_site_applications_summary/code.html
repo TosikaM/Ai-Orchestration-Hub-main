@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-slate-50" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Screen 5: Site Applications Summary - CNP LINQ</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0b1e3b',
+              navyDark: '#07152b',
+              navyHover: '#132c52',
+              blue: '#0D52B7',
+              sky: '#0284C7',
+              accent: '#2563EB',
+            }
+          },
+          fontFamily: {
+            sans: ['Public Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="custom-scroll-and-enhancements">
+    /* Subtle custom scrollbar for clean enterprise look */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 bg-slate-100 flex overflow-hidden">
+<!-- BEGIN: NavigationSidebar -->
+<!-- Dark navy full-height sidebar with high-contrast active highlights -->
+<aside aria-label="Main Navigation" class="w-64 bg-[#071739] flex-shrink-0 flex flex-col justify-between z-20 border-r border-slate-800 select-none">
+<div class="flex flex-col h-full">
+<!-- Brand Logo Header -->
+<div class="h-16 px-5 flex items-center border-b border-slate-800/80 bg-[#061432]">
+<a aria-label="CNP LINQ Homepage" class="flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-sky-400 rounded p-1" href="#">
+<!-- Stylized Orbiting Nutrition Rings SVG Brand Icon -->
+<div class="w-9 h-9 relative flex-shrink-0">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<circle cx="24" cy="24" fill="none" r="20" stroke="#0284C7" stroke-dasharray="90 35" stroke-width="4.5"></circle>
+<circle cx="24" cy="24" fill="none" r="13" stroke="#38BDF8" stroke-dasharray="60 25" stroke-width="4.5" transform="rotate(45 24 24)"></circle>
+<circle cx="24" cy="24" fill="#38BDF8" r="5"></circle>
+</svg>
+</div>
+<div class="leading-tight">
+<span class="block text-white font-extrabold text-lg tracking-tight">CNP LINQ</span>
+<span class="block text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Child Nutrition Programs</span>
+</div>
+</a>
+</div>
+<!-- Navigation Menu Items -->
+<nav aria-label="Sidebar Navigation Links" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Dashboard</span>
+</a>
+<!-- Applications (Active) -->
+<a aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#0D52B7] shadow-sm" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Applications</span>
+</a>
+<!-- Sites -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Sites</span>
+</a>
+<!-- Documents -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Documents</span>
+</a>
+<!-- Notifications -->
+<a class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<div class="flex items-center gap-3">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Notifications</span>
+</div>
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold text-white bg-rose-600 rounded-full min-w-[20px]">2</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Reports</span>
+</a>
+<!-- Audit History -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Audit History</span>
+</a>
+</nav>
+<!-- Bottom Utility Links -->
+<div class="p-3 border-t border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition-colors" href="#">
+<svg aria-hidden="true" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span>Sign Out</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- END: NavigationSidebar -->
+<!-- Main Viewport Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- BEGIN: TopHeader -->
+<!-- Top global bar with program selector, academic year, notifications and user profile -->
+<header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-10 flex-shrink-0" data-purpose="top-navigation-header">
+<!-- Left Header Controls: Program & Year Selectors -->
+<div class="flex items-center gap-4">
+<!-- Program Selector Dropdown -->
+<div class="flex items-center gap-2">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider" for="program-selector">Program:</label>
+<div class="relative">
+<select class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-800 text-sm font-medium rounded-md py-1.5 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 cursor-pointer" id="program-selector">
+<option selected="">NSLP</option>
+<option>SBP</option>
+<option>CACFP</option>
+<option>SFSP</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- Program Year Selector Dropdown -->
+<div class="flex items-center gap-2 ml-2">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider" for="year-selector">Program Year:</label>
+<div class="relative">
+<select class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-800 text-sm font-medium rounded-md py-1.5 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 cursor-pointer" id="year-selector">
+<option selected="">2026-27</option>
+<option>2025-26</option>
+<option>2024-25</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Header Controls: Notification & User Profile -->
+<div class="flex items-center gap-4">
+<!-- Notification Bell with Badge -->
+<button aria-label="View notifications" class="relative p-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" type="button">
+<svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span class="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-red-500 rounded-full min-w-[16px] h-4">2</span>
+</button>
+<div class="h-6 w-px bg-slate-200"></div>
+<!-- User Profile Dropdown Pill -->
+<button class="flex items-center gap-3 p-1 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left" type="button">
+<div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 text-brand-blue font-bold text-sm flex items-center justify-center">
+            JS
+          </div>
+<div class="hidden sm:block leading-tight">
+<span class="block text-sm font-semibold text-slate-800 flex items-center gap-1">
+              John Smith
+              <svg class="w-4 h-4 text-slate-400 inline" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+<span class="block text-xs text-slate-500">Sponsor Director</span>
+</div>
+</button>
+</div>
+</header>
+<!-- END: TopHeader -->
+<!-- Scrollable Main Workspace -->
+<main class="flex-1 overflow-y-auto px-8 py-6 space-y-6" data-purpose="content-container">
+<!-- BEGIN: BreadcrumbAndHeader -->
+<section data-purpose="page-title-section">
+<!-- Back Navigation Link -->
+<div class="mb-3">
+<a class="inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800 transition-colors" href="#">
+<svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+            Back to Application Overview
+          </a>
+</div>
+<!-- Title Row with Action CTA -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Site Applications Summary</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase tracking-wide">
+                IN PROGRESS
+              </span>
+</div>
+<!-- Subtitle and Meta Specs -->
+<p class="mt-1 text-sm font-medium text-slate-600">
+              Application <span class="text-slate-900 font-semibold">#APP-10234</span>  •  ABC School District  •  FEIN: 12-3456789  •  Iowa
+            </p>
+<p class="mt-1 text-xs text-slate-500">
+              This section provides a summary of all site applications included in this application.
+            </p>
+</div>
+<!-- Secondary Action: Manage Site Applications -->
+<div class="flex-shrink-0">
+<button class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-semibold rounded-md text-brand-blue bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all" type="button">
+              Manage Site Applications
+            </button>
+</div>
+</div>
+</section>
+<!-- END: BreadcrumbAndHeader -->
+<!-- BEGIN: StatusMetricCards -->
+<!-- 7 Cards Metric Status Row -->
+<section aria-label="Status Metrics Grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3.5" data-purpose="status-metric-counters">
+<!-- Total Sites Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Total Sites</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-blue-50 text-brand-blue flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">24</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View all sites <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Ready Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Ready</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">17</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View ready <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Attention Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Attention</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">4</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View attention <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Under Review Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Under Review</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">3</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View under review <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Returned Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Returned</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">2</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View returned <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Approved Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Approved</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">10</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View approved <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+<!-- Denied Card -->
+<div class="bg-white rounded-lg border border-slate-200 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="text-xs font-semibold text-slate-600">Denied</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="w-8 h-8 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+</div>
+<span class="text-2xl font-extrabold text-slate-900 leading-none">0</span>
+</div>
+</div>
+<a class="mt-3 inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+            View denied <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+</section>
+<!-- END: StatusMetricCards -->
+<!-- BEGIN: DataTableSection -->
+<!-- Main Site Applications Table with Search, Filter Bar, Badges, and Pagination -->
+<section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" data-purpose="site-applications-table-card">
+<!-- Filter Toolbar -->
+<div class="p-4 border-b border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white">
+<!-- Search Bar & Filters -->
+<div class="flex flex-wrap items-center gap-3 flex-1">
+<!-- Search Input -->
+<div class="relative min-w-[260px] max-w-sm flex-1">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<input class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-sm placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Search sites by name or ID..." type="text"/>
+</div>
+<!-- Status Filter -->
+<div class="relative">
+<select class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-md py-1.5 pl-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+<option selected="">Status: All</option>
+<option>Ready</option>
+<option>Attention</option>
+<option>Under Review</option>
+<option>Returned</option>
+<option>Approved</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<!-- Site Type Filter -->
+<div class="relative">
+<select class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-md py-1.5 pl-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+<option selected="">Site: All</option>
+<option>Base</option>
+<option>Non-Base</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<!-- Filters Toggle Button -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500" type="button">
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              Filters
+            </button>
+</div>
+<!-- Export CTA -->
+<div class="flex items-center">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-300 rounded-md text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500" type="button">
+<svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              Export
+            </button>
+</div>
+</div>
+<!-- Section Header above Table -->
+<div class="px-6 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="text-sm font-bold text-slate-800 tracking-tight">Site Applications</h2>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">24 sites</span>
+</div>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse" id="site-applications-table">
+<thead>
+<tr class="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+<th class="py-3 px-6" scope="col">Site ID</th>
+<th class="py-3 px-6" scope="col">Site Name</th>
+<th class="py-3 px-6" scope="col">Site Type</th>
+<th class="py-3 px-6" scope="col">Status</th>
+<th class="py-3 px-6" scope="col">Last Updated</th>
+<th class="py-3 px-6" scope="col">Updated By</th>
+<th class="py-3 px-6 text-right" scope="col">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 text-sm text-slate-700">
+<!-- Row 1: Lincoln Elementary -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00123</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Lincoln Elementary School</td>
+<td class="py-3.5 px-6 text-slate-600">Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Ready
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 30, 2024 10:15 AM</td>
+<td class="py-3.5 px-6 text-slate-700">John Smith</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    View
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Row 2: Washington Middle -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00124</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Washington Middle School</td>
+<td class="py-3.5 px-6 text-slate-600">Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                    Returned
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 30, 2024 9:42 AM</td>
+<td class="py-3.5 px-6 text-slate-700">Jane Doe</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    View
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Row 3: Roosevelt Elementary -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00125</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Roosevelt Elementary School</td>
+<td class="py-3.5 px-6 text-slate-600">Non-Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                    Attention
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 29, 2024 3:20 PM</td>
+<td class="py-3.5 px-6 text-slate-700">John Smith</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    Open
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Row 4: Jefferson High -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00126</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Jefferson High School</td>
+<td class="py-3.5 px-6 text-slate-600">Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800 border border-sky-200">
+                    Under Review
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 29, 2024 11:05 AM</td>
+<td class="py-3.5 px-6 text-slate-700">State Reviewer</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    View
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Row 5: Franklin Elementary -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00127</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Franklin Elementary School</td>
+<td class="py-3.5 px-6 text-slate-600">Non-Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
+                    Approved
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 28, 2024 4:30 PM</td>
+<td class="py-3.5 px-6 text-slate-700">State Administrator</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    View
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+<!-- Row 6: Madison Elementary -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3.5 px-6 font-semibold text-slate-900">00128</td>
+<td class="py-3.5 px-6 font-medium text-slate-900">Madison Elementary School</td>
+<td class="py-3.5 px-6 text-slate-600">Base</td>
+<td class="py-3.5 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Ready
+                  </span>
+</td>
+<td class="py-3.5 px-6 text-slate-600">May 28, 2024 2:15 PM</td>
+<td class="py-3.5 px-6 text-slate-700">John Smith</td>
+<td class="py-3.5 px-6 text-right">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-blue bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors" type="button">
+                    View
+                    <svg class="w-3 h-3 text-brand-blue" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Controls Footer -->
+<div class="px-6 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 bg-white">
+<div>
+            Showing <span class="font-semibold text-slate-800">1</span> to <span class="font-semibold text-slate-800">10</span> of <span class="font-semibold text-slate-800">24</span> sites
+          </div>
+<div class="flex items-center gap-3">
+<!-- Page selector buttons -->
+<nav aria-label="Pagination" class="inline-flex -space-x-px rounded-md shadow-sm">
+<button aria-label="Previous Page" class="px-2.5 py-1.5 rounded-l-md border border-slate-300 bg-white text-slate-500 hover:bg-slate-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button aria-current="page" class="z-10 bg-blue-50 border-blue-600 text-brand-blue px-3 py-1.5 border font-bold text-xs focus:outline-none" type="button">1</button>
+<button class="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 border text-xs focus:outline-none" type="button">2</button>
+<button class="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 border text-xs focus:outline-none" type="button">3</button>
+<button aria-label="Next Page" class="px-2.5 py-1.5 rounded-r-md border border-slate-300 bg-white text-slate-500 hover:bg-slate-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</nav>
+<!-- Rows per page selector -->
+<div class="relative">
+<select class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-md py-1 pl-2.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+<option selected="">10 / page</option>
+<option>25 / page</option>
+<option>50 / page</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: DataTableSection -->
+<!-- BEGIN: BottomSummaryActionRow -->
+<!-- 3 Columns: Next Steps card, Validation Summary card, and Overall Site Completion card with CTAs -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-4 pb-6" data-purpose="summary-and-action-footer">
+<!-- Left: Next Steps (4 Cols) -->
+<div class="md:col-span-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 text-brand-blue flex items-center justify-center flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div>
+<h3 class="text-sm font-bold text-slate-900">Next Steps</h3>
+<p class="mt-1 text-xs text-slate-600 leading-relaxed">
+              Review sites with attention items, resolve validation errors, and ensure required information is complete before submitting for state agency approval.
+            </p>
+</div>
+</div>
+<!-- Center: Validation Summary (4 Cols) -->
+<div class="md:col-span-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+<div>
+<h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Validation Summary</h3>
+<div class="mt-3 flex items-center justify-between px-2">
+<!-- Errors Pill -->
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">✕</span>
+<div class="text-left">
+<span class="text-sm font-bold text-slate-900">2</span>
+<span class="text-[11px] text-slate-500 block leading-none">Errors</span>
+</div>
+</div>
+<!-- Warnings Pill -->
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold">⚠</span>
+<div class="text-left">
+<span class="text-sm font-bold text-slate-900">4</span>
+<span class="text-[11px] text-slate-500 block leading-none">Warnings</span>
+</div>
+</div>
+<!-- Passed Pill -->
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+<div class="text-left">
+<span class="text-sm font-bold text-slate-900">18</span>
+<span class="text-[11px] text-slate-500 block leading-none">Passed</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-3 pt-2 border-t border-slate-100">
+<a class="inline-flex items-center text-xs font-semibold text-brand-blue hover:text-blue-800" href="#">
+              View validation results <span class="ml-1 text-[11px]">→</span>
+</a>
+</div>
+</div>
+<!-- Right: Overall Site Completion & Buttons (4 Cols) -->
+<div class="md:col-span-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-xs font-bold">
+<span class="text-slate-700 uppercase tracking-wider">Overall Site Completion</span>
+<span class="text-brand-blue text-sm font-extrabold">75%</span>
+</div>
+<!-- Progress Bar Indicator -->
+<div class="mt-2 w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+<div class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 75%"></div>
+</div>
+<p class="mt-1 text-[11px] text-slate-500 text-right">18 of 24 sites complete</p>
+</div>
+<!-- Bottom Main Buttons -->
+<div class="mt-3 flex flex-col sm:flex-row items-center gap-2">
+<button class="w-full sm:flex-1 py-2 px-3 bg-brand-blue hover:bg-blue-800 text-white rounded-md text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600" type="button">
+              Continue to Next Section
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="w-full sm:w-auto py-2 px-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 whitespace-nowrap" type="button">
+              Return to Packet Overview
+            </button>
+</div>
+</div>
+</section>
+<!-- END: BottomSummaryActionRow -->
+</main>
+</div>
+</body></html>

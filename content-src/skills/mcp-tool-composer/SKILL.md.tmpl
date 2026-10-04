@@ -1,0 +1,68 @@
+---
+name: mcp-tool-composer
+description: Composes multi-tool MCP chains with fallbacks and a token budget per step.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob]
+metadata:
+  version: 1.0.0
+  category: orchestration
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** mcp, tool chain, compose, "which tools", connector.
+**USE FOR:** planning a multi-tool sequence with declared fallbacks and per-step budgets.
+**NOT FOR:** executing the chain — the caller does that, usually `sdlc-orchestrator` or
+`cqrs-developer`. Auditing what the tool surface costs — that is `context-budget`.
+
+> **Plans, does not execute.** `allowed-tools` is read-only on purpose: a composer that
+> can also run the chain conflates two failure modes, and when the chain breaks you
+> cannot tell whether the plan or the execution was wrong.
+
+## Compose From The Registry, Not From Memory
+
+Chains come from `config/tool-registry.json → toolChains`. Never invent a tool name. A
+tool that does not exist produces a failure three steps into a chain, which is the most
+expensive place for it to happen.
+
+| Chain | Sequence | Use when |
+|-------|----------|----------|
+| `codeAnalysis` | structural-graph → grep → read | Locating a symbol before reading |
+| `implementation` | read → replace → run | Changing and immediately proving |
+| `review` | changed-files → read → run | Reviewing a diff, not a repo |
+| `storyCreation` | tracker MCP | Writing stories into a tracker |
+| `e2eTesting` | browser MCP → run | Generating and running browser specs |
+
+## Every Optional Tool Declares A Fallback
+
+If a connector is optional, the chain states what happens without it, from the registry's
+`optional.<name>.fallback`. A chain that assumes a connector is present is a chain that
+fails on the machine where it is not.
+
+## Health Is Checked, Not Assumed
+
+An unhealthy connector fails fast and the declared fallback is taken. Retrying a timeout
+spends the timeout again and never reaches the fallback that was carefully written — the
+whole point of declaring one.
+
+## The MCP Surface Is A Budget
+
+Every MCP tool description is **always-on context**, in exactly the way the discovery
+budget exists to control. Ceilings live in `config/token-budgets.json → mcpSurface`:
+at most one default connector, at most thirty tools across all of them.
+
+Default is **zero enabled connectors.** An org declares what it may enable; a developer
+turns one on deliberately. This is the one budget most systems omit entirely, and it is
+paid on every session before anybody types.
+
+## Output
+
+The chain as a numbered sequence, each step with: tool · purpose · token budget ·
+fallback. Then the total estimated cost, labeled as an estimate.
+
+{{TOKEN_DISCIPLINE}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}

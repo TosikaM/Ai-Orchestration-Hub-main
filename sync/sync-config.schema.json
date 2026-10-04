@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestrator Sync Configuration",
+  "description": "The shape of sync/default-sync-config.json and of any per-repo override derived from it. Under the plugin distribution model the subscription list is deliberately short — the plugin carries the content, so a sync moves configuration and regenerates the repo context rather than copying a tree of agents and skills into every consumer.",
+  "type": "object",
+  "required": ["hubRepository", "hubBranch", "subscriptions"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "_comment": {
+      "type": "string",
+      "description": "Free prose. JSON cannot carry comments and the reasoning behind a subscription list is exactly the thing a future editor needs, so there is one sanctioned place to put it rather than a README that drifts from the file it explains."
+    },
+    "hubRepository": {
+      "type": "string",
+      "pattern": "^[\\w.-]+/[\\w.-]+$",
+      "description": "The hub in owner/name form. The pattern is duplicated on purpose from the validation that guards hub.repository in config/hub-config.schema.json, so a malformed value is rejected while the configuration is being validated rather than surfacing much later as a clone failure with a git error message that says nothing about which config file was wrong. Note the honest limit of a regex here: it proves the value has the right shape, never that the repository exists or that this machine can reach it. That failure still happens at clone time and there is no way to move it earlier."
+    },
+    "hubBranch": {
+      "type": "string",
+      "pattern": "^[\\w./-]+$",
+      "description": "Branch to sync from, normally main. The pattern admits the slashes and dots real branch names use (release/3.1, feature/x.y) while rejecting the whitespace and shell metacharacters that turn a branch name into an argument-injection surface when it reaches a git command line."
+    },
+    "conflictResolution": {
+      "type": "string",
+      "enum": ["auto", "prompt"],
+      "default": "prompt",
+      "description": "What to do when a synced file has been modified locally. `prompt` asks; `auto` takes the hub's copy. The default is `prompt` because the alternative discards work that somebody did deliberately, and the person who loses an edit that way stops trusting the sync — after which they stop running it, which costs far more than the interruption did.",
+      "$comment": "Neither value means 'merge'. The sync copies whole files; it has no three-way merge, and pretending otherwise in an enum value would be worse than the gap."
+    },
+    "autoSync": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the sync may run without being asked. Turning this off does not disable syncing, only the automatic trigger."
+    },
+    "syncOnWorkspaceOpen": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether opening the workspace triggers a sync. Subject to refreshIntervalHours, so reopening an editor five times in an afternoon does not mean five syncs."
+    },
+    "refreshIntervalHours": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1,
+      "description": "Minimum hours between automatic syncs. Zero means every trigger syncs, which is useful while debugging the sync itself and wasteful otherwise."
+    },
+    "overlayProfile": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Which directory under overlays/ supplies organization-specific content. Matches overlay.profile in hub.config.json. Overlays and hub.config.json are the only two places an organization-identifying string may appear (golden rule G4); naming the profile here is a reference to that directory, not a second copy of the identity."
+    },
+    "subscriptions": {
+      "type": "array",
+      "description": "Content paths that must be copied from the hub into the repository. Keep this list as short as it can honestly be: every entry is a file that can be edited locally and then overwritten, which is the entire class of problem the plugin model removed.",
+      "items": {
+        "type": "object",
+        "required": ["type", "remotePath", "localPath"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["agent", "skill", "instruction", "prompt", "hook", "context", "framework", "config"],
+            "description": "What kind of content this is. The enum is wider than the default subscription list because a repository that opts into vendoring subscribes to several of these; the types remain valid even though the default configuration uses only `config`."
+          },
+          "remotePath": {
+            "type": "string",
+            "description": "Path within the hub repository. A trailing slash means a directory and is copied recursively."
+          },
+          "localPath": {
+            "type": "string",
+            "description": "Destination path within the consumer repository, normally under .github/. Keeping synced content inside .github/ is what lets the managed .gitignore block and the uninstall path describe their scope precisely instead of guessing at what belongs to the orchestrator."
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a failure to deliver this path should fail the sync. Set it for anything whose absence degrades behaviour silently rather than loudly — configuration is the clearest case, because readers fall back to built-in defaults and carry on without complaint."
+          },
+          "why": {
+            "type": "string",
+            "description": "One sentence on why this path still has to be repo-local under the plugin model. Required by review convention, not by this schema: an entry nobody can justify is an entry to delete."
+          }
+        }
+      }
+    },
+    "vendoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional on-disk copies of plugin content, for a repository with an offline or audit requirement. Off unless explicitly requested.",
+      "properties": {
+        "optIn": { "type": "boolean", "description": "Whether vendoring is available for this configuration at all." },
+        "default": { "type": "boolean", "description": "Whether it happens without being asked. Keep this false; the cost of vendoring is one pull request per repository at every upgrade." },
+        "components": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Hub directories copied when vendoring is requested."
+        },
+        "note": { "type": "string" }
+      }
+    },
+    "repoContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The repo's own context file. Generated locally rather than subscribed, because it describes this codebase and no upstream copy of it exists to pull.",
+      "properties": {
+        "autoGenerate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether connect and sync regenerate the context file."
+        },
+        "contextFilePath": {
+          "type": "string",
+          "default": ".github/orchestrator-context.md",
+          "description": "Where the generated context lands. Recorded rather than assumed, so a repository that keeps it elsewhere stays discoverable."
+        },
+        "refreshOnMerge": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether a merge into the default branch triggers regeneration. This is the trigger that matters: a context file is accurate on the day it is written and decays with every merge that nobody regenerated it for."
+        },
+        "staleThresholdDays": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 14,
+          "description": "Age at which the context file is reported stale. A stale context is worse than a missing one — an agent reading a confident, outdated description of the codebase has no reason to go and check, whereas a missing file forces it to look."
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

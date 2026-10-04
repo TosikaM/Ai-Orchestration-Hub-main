@@ -1,0 +1,169 @@
+<!DOCTYPE html><html class="h-full bg-slate-50" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CNP LINQ - Sign in with SSO</title>
+<!-- Tailwind CSS v3 with Forms & Container Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Public Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Public Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              600: '#0284c7',
+              700: '#0d52b7',
+              800: '#0b2a56',
+              900: '#071d3c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    /* Subtle background grid pattern for depth and polish */
+    .bg-subtle-pattern {
+      background-color: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px), radial-gradient(#cbd5e1 0.75px, #f8fafc 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col font-sans text-slate-800 bg-subtle-pattern antialiased selection:bg-blue-100 selection:text-blue-900">
+<!-- BEGIN: MainContainer -->
+<main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8" id="main-content">
+<!-- BEGIN: AuthenticationCardContainer -->
+<div class="w-full max-w-md" data-purpose="auth-card-container">
+<!-- Elevated Auth Card -->
+<section aria-labelledby="auth-card-title" class="bg-white rounded-2xl shadow-xl shadow-slate-200/70 border border-slate-200/80 p-8 sm:p-10 transition-all duration-200" data-purpose="auth-card">
+<!-- BEGIN: BrandingHeader -->
+<header class="flex flex-col items-center text-center">
+<!-- CNP LINQ Provided Brand Logo (SVG) -->
+<div class="flex justify-center items-center mb-6" data-purpose="brand-logo">
+<svg aria-label="CNP LINQ Child Nutrition Programs logo" class="w-64 h-auto sm:w-[280px]" fill="none" role="img" viewBox="0 0 280 64" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(4, 8)">
+<!-- Interlocking / Orbiting Nutrition Rings Icon -->
+<circle cx="24" cy="24" fill="none" r="20" stroke="#0284C7" stroke-dasharray="90 35" stroke-width="4.5"></circle>
+<circle cx="24" cy="24" fill="none" r="13" stroke="#0D52B7" stroke-dasharray="60 25" stroke-width="4.5" transform="rotate(45 24 24)"></circle>
+<circle cx="24" cy="24" fill="#0D52B7" r="5"></circle>
+<!-- Brand Name Text -->
+<text fill="#0D52B7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="900" letter-spacing="-0.5" x="56" y="31">CNP LINQ</text>
+<text fill="#475569" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" letter-spacing="0.5" x="58" y="44">Child Nutrition Programs</text>
+</g>
+</svg>
+</div>
+<!-- Instructions / Subheading -->
+<h1 class="text-base sm:text-lg font-medium text-slate-700 tracking-tight" id="auth-card-title">
+            Sign in with your organization account
+          </h1>
+</header>
+<!-- END: BrandingHeader -->
+<!-- Dynamic Feedback Alert Container (Hidden by default for standard view) -->
+<div aria-live="polite" class="hidden mt-4 p-3.5 rounded-lg text-sm" id="status-alert" role="alert"></div>
+<!-- BEGIN: SSOActionSection -->
+<div class="mt-8 space-y-6" data-purpose="login-actions">
+<!-- SSO Primary Action Button -->
+<button aria-label="Sign in with Single Sign-On" class="w-full relative flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-lg text-base font-semibold text-white bg-[#0D52B7] hover:bg-[#0b4498] active:bg-[#093577] focus:outline-none focus:ring-4 focus:ring-blue-500/30 shadow-md shadow-blue-900/10 transition duration-150 ease-in-out cursor-pointer" id="btn-sso-login" type="button">
+<!-- Lock Icon -->
+<svg aria-hidden="true" class="w-5 h-5 text-white/90 flex-shrink-0" fill="currentColor" id="lock-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 00-7.5 0v3h7.5z" fill-rule="evenodd"></path>
+</svg>
+<!-- Loading Spinner (Hidden by default) -->
+<svg aria-hidden="true" class="hidden animate-spin h-5 w-5 text-white" fill="none" id="spinner-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+<!-- Button Label -->
+<span id="btn-text">Sign in with SSO</span>
+</button>
+<!-- Help and Support Links -->
+<div class="text-center pt-2 space-y-2">
+<div>
+<a class="inline-block text-sm font-medium text-[#0D52B7] hover:text-[#0b2a56] hover:underline focus:outline-none focus:ring-2 focus:ring-[#0D52B7] focus:ring-offset-2 rounded" href="#help">
+                Having trouble signing in?
+              </a>
+</div>
+<p class="text-xs sm:text-sm text-slate-500">
+              Contact your systems administrator.
+            </p>
+</div>
+</div>
+<!-- END: SSOActionSection -->
+</section>
+</div>
+<!-- END: AuthenticationCardContainer -->
+</main>
+<!-- END: MainContainer -->
+<!-- BEGIN: PageFooter -->
+<footer class="w-full py-6 px-4 sm:px-8 border-t border-slate-200/60 bg-white/50 backdrop-blur-sm" data-purpose="site-footer">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-slate-500">
+<!-- Copyright text -->
+<div class="text-center md:text-left">
+<p>© 2025 CNP LINQ. All rights reserved.</p>
+</div>
+<!-- Legal and Support Links -->
+<nav aria-label="Footer navigation">
+<ul class="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
+<li>
+<a class="text-slate-600 hover:text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0D52B7] focus:ring-offset-2 rounded" href="#privacy">
+              Privacy Policy
+            </a>
+</li>
+<li>
+<a class="text-slate-600 hover:text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0D52B7] focus:ring-offset-2 rounded" href="#terms">
+              Terms of Use
+            </a>
+</li>
+<li>
+<a class="text-slate-600 hover:text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0D52B7] focus:ring-offset-2 rounded" href="#support">
+              Support
+            </a>
+</li>
+</ul>
+</nav>
+</div>
+</footer>
+<!-- END: PageFooter -->
+<!-- Interactive Demo Script to handle UI States specified in specification -->
+<script data-purpose="sso-interaction">
+    document.addEventListener('DOMContentLoaded', () => {
+      const ssoButton = document.getElementById('btn-sso-login');
+      const lockIcon = document.getElementById('lock-icon');
+      const spinnerIcon = document.getElementById('spinner-icon');
+      const btnText = document.getElementById('btn-text');
+      const alertBox = document.getElementById('status-alert');
+
+      if (!ssoButton) return;
+
+      ssoButton.addEventListener('click', () => {
+        // UI State: SSO In Progress
+        ssoButton.disabled = true;
+        ssoButton.classList.add('opacity-85', 'cursor-not-allowed');
+        lockIcon.classList.add('hidden');
+        spinnerIcon.classList.remove('hidden');
+        btnText.textContent = 'Signing in...';
+
+        // Simulate identity provider redirect delay
+        setTimeout(() => {
+          // Revert button state after demo simulation
+          ssoButton.disabled = false;
+          ssoButton.classList.remove('opacity-85', 'cursor-not-allowed');
+          lockIcon.classList.remove('hidden');
+          spinnerIcon.classList.add('hidden');
+          btnText.textContent = 'Sign in with SSO';
+        }, 3000);
+      });
+    });
+  </script>
+</body></html>

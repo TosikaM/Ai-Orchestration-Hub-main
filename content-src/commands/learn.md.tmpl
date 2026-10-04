@@ -1,0 +1,28 @@
+---
+description: Capture a durable lesson into two-tier memory, deduplicated and redacted.
+argument-hint: "<the lesson>"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-015]
+---
+
+# Learn
+
+Capture using the `continuous-learning` skill.
+
+## Skill Loaded
+**Required:** Read `skills/continuous-learning/SKILL.md` and `commands/learn.md`.
+
+## Usage
+```
+/learn nullable columns avoid a backfill on this schema, so prefer them for added fields
+```
+
+## Output
+A new or reinforced entry with its confidence value, and whether it now meets the
+promotion rule.
+
+## Notes
+Deduplicates on title and resolution, never on context. Every write runs the redaction
+and injection scan — there is no skip flag.

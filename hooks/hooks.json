@@ -1,0 +1,128 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "description": "Fact-forcing gate: deny the first Edit/Write per file per session until retrieved facts are presented",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:edit-write:fact-force",
+            "timeout": 8
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "description": "Config protection: deny edits to files that define a quality gate unless the override is set",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:edit-write:config-protection",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "description": "Prompt defense: flag reads of synced content whose text matches a prompt-injection signature",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:read:prompt-defense",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash|PowerShell",
+        "description": "Autonomy gate: deny actions whose blast radius exceeds the repository's policy autonomy level",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:action:autonomy-gate",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "description": "Destructive gate: deny irreversible or infrastructure-mutating commands until a rollback path is stated",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:bash:destructive-gate",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "description": "Bootstrap: inject the small always-on set — active decisions, context-file staleness, discovery footprint",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" session:start:bootstrap",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "matcher": ".*",
+        "description": "Checkpoint the in-flight pipeline before the window is compacted",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" pre:compact:checkpoint",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "matcher": ".*",
+        "description": "Synchronous stop dispatcher: citation guard, then the human-gate block. One Node startup for both.",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/dispatch.js\" stop:dispatcher:sync",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "description": "Asynchronous stop dispatcher: learning capture, context staleness, telemetry. Never makes the user wait.",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/dispatch.js\" stop:dispatcher:async",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "description": "Flush telemetry and release any cross-repo band locks held by this session",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/runtime/run.js\" session:end:teardown",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "./session.schema.json",
+  "sessionVersion": "1.1.0",
+  "lastUpdated": null,
+  "activeRepo": null,
+  "activeGroup": null,
+  "activeMode": "dev",
+  "lastCommand": null,
+  "lastQuery": null,
+  "history": [],
+  "pinnedRepos": [],
+  "recentRepos": [],
+  "loadedMemory": {
+    "globalMemoryLoaded": false,
+    "repoMemoryLoaded": [],
+    "lastMemoryRefresh": null
+  },
+  "qualityGates": {
+    "minScore": 80,
+    "lastScore": null,
+    "lastGateResult": null
+  },
+  "budget": {
+    "lastEagerChars": null,
+    "lastEstimatedTokens": null,
+    "lastOverBudget": false
+  }
+}

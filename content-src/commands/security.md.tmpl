@@ -1,0 +1,28 @@
+---
+description: Security review of the diff — credentials, injection, subprocess, dependencies, agent surface.
+argument-hint: "[--full-repo]"
+version: 1.0.0
+owner: ai-platform
+lastReviewed: 2026-09-09
+evalIds: [eval-009, eval-010]
+---
+
+# Security
+
+Review for exploitable risk using the `security-review` skill.
+
+## Skill Loaded
+**Required:** Read `skills/security-review/SKILL.md` and `commands/security.md`.
+
+## Usage
+```
+/security
+/security --full-repo
+```
+
+## Output
+Findings table — severity, file:line, attack scenario, fix — then a verdict.
+
+## Notes
+Every finding needs a concrete exploit path. Severity without a scenario is a
+suggestion, and a clean diff is reported as clean.

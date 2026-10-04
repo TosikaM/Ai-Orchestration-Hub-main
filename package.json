@@ -1,0 +1,42 @@
+{
+  "name": "ai-orchestrator-hub",
+  "version": "3.1.0",
+  "private": true,
+  "description": "Centralized, technology-agnostic AI SDLC orchestrator for multi-repo projects",
+  "keywords": [
+    "sdlc",
+    "orchestrator",
+    "pipeline",
+    "cross-repo",
+    "agents",
+    "skills",
+    "grounding",
+    "token-budget",
+    "claude-code",
+    "plugin"
+  ],
+  "license": "PROPRIETARY",
+  "author": "Algoworks AI Platform Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abhishek-narula-algoworks/Ai-Orchestration-Hub.git"
+  },
+  "//": "There is deliberately no top-level \"type\" key. An earlier revision carried a stray top-level \"type\": \"git\" that belonged inside \"repository\"; npm reads a top-level \"type\" as a module-type declaration, where \"git\" is not a legal value. Add \"type\" here only if this package genuinely becomes ESM or CommonJS by declaration.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "validate": "python scripts/validate-structure.py",
+    "test": "python scripts/validate-structure.py",
+    "gen": "python scripts/gen-content.py",
+    "gen:check": "python scripts/gen-content.py --check",
+    "bill": "python scripts/context-bill.py",
+    "bill:check": "python scripts/context-bill.py --budget",
+    "budget": "python scripts/measure-discovery-budget.py",
+    "budget:check": "python scripts/measure-discovery-budget.py --check",
+    "doctor": "python scripts/orchestrator.py doctor",
+    "audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit.ps1",
+    "evals:gate": "python evals/eval-runner.py --tier gate",
+    "build": "npm run gen && npm run validate"
+  }
+}

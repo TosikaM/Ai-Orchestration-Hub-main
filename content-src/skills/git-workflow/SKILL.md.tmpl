@@ -1,0 +1,82 @@
+---
+name: git-workflow
+description: Takes a verified change from working tree to pull request — branch, commit, push, PR, CI — under the repository's autonomy level.
+license: PROPRIETARY
+allowed-tools: [Read, Grep, Glob, Bash]
+metadata:
+  version: 1.0.0
+  category: release
+  tier: POWERFUL
+---
+
+## Routing
+
+**Triggers:** branch, commit, push, PR, pull request, "ship this", "open a PR", CI.
+**USE FOR:** moving a verified change through git into a reviewable pull request.
+**NOT FOR:** deciding whether the change is good — that is `quality-sentinel`. Running the
+pre-PR gate — that is `verification-loop`. Release readiness and notes — that is
+`release-engineering`.
+
+## The Boundary This Skill Respects
+
+The pipeline used to end at a working tree, and a human copied the result into their own
+terminal. This closes that gap — but it closes it *up to a point*, and the point is
+deliberate.
+
+| Step | Autonomy level |
+|------|----------------|
+| branch, commit | 2 |
+| push, open a pull request | 4 |
+| **merge** | **not implemented, at any level** |
+
+There is no merge path. Merging is the one action here with no cheap undo and no reviewer
+standing between it and the default branch. The four human gates upstream are worth
+something only because a person is still required at the end; a system that merges its own
+work has quietly removed the last place anybody was obliged to look.
+
+## Before You Touch Git
+
+1. **`verification-loop` must have passed.** A branch whose build was never run is a
+   branch somebody else has to debug. If a phase could not run, it is "not run" — not
+   "passed" — and that blocks.
+2. **Never commit to the default branch.** The script refuses. Committing to `main`
+   skips review, which is the single step the whole pipeline exists to reach.
+3. **Read the diff you are about to commit**, not a summary of it.
+
+## Commands
+
+```
+python scripts/git-flow.py status
+python scripts/git-flow.py branch --task "<what you are doing>"
+python scripts/git-flow.py commit --message "<subject>" --all
+python scripts/git-flow.py pr --title "<title>" --body-file <path>
+python scripts/git-flow.py checks --wait
+```
+
+Every one takes `--dry-run` where it would change something shared. Use it at level 3:
+produce the branch contents and the PR body as artifacts and hand them over.
+
+## Writing The Commit And The PR
+
+A commit message is permanent and a pull-request body is published, so both are scanned
+for credentials before they leave the machine. A HIGH-tier finding blocks.
+
+- **Subject line:** what changed and why, in the imperative. Not "changes" and not a
+  restatement of the file list — the diff already lists the files.
+- **PR body:** what a reviewer needs in order to say yes. The requirement, the approach,
+  what was verified with the actual command output, and — most usefully — what you
+  deliberately did not do.
+- **Never invent** a ticket number, a reviewer, or a version. Omit what you cannot verify.
+
+## CI
+
+`checks` reports NOT AVAILABLE when the GitHub CLI is absent, never green. An unknown
+check state is not a passing one, and `release-engineering` blocks on red *or* unknown.
+
+{{EVIDENCE_DIRECTIVE}}
+
+{{GROUNDING_CONTRACT}}
+
+{{OUTPUT_CONTRACT}}
+
+{{LESSONS_LEARNED}}
